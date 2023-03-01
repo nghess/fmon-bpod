@@ -1,11 +1,6 @@
-function fmos
+function calibrate_h2o
 %%
 global BpodSystem
-%A = BpodAnalogIn(BpodSystem.ModuleUSB.AnalogIn1);
-
-%% Set Reward amounts
-LeftValveTime = .17; %In practice, these will be defined by calibrate_h2o
-RightValveTime = .27;
 
 %% Define parameters
 S = BpodSystem.ProtocolSettings; % Load settings chosen in launch manager into current workspace as a struct called S
@@ -16,71 +11,40 @@ if isempty(fieldnames(S))  % If settings file was an empty struct, populate stru
 end
 
 %% Define trials
-nLeftTrials = 0;
-nRightTrials = 0;
-nRandomTrials = 100;
-MaxTrials = nLeftTrials+nRightTrials+nRandomTrials;
-TrialTypes = [ones(1,nLeftTrials) ones(1,nRightTrials)*2 ceil(rand(1,nRandomTrials)*2)];
+reps = 100;
+TrialTypes = ones(1,reps);
 BpodSystem.Data.TrialTypes = []; % The trial type of each trial completed will be added here.
 
 %% Initialize plots
 BpodSystem.ProtocolFigures.OutcomePlotFig = figure('Position', [50 540 1000 250],'name','Outcome plot','numbertitle','off', 'MenuBar', 'none', 'Resize', 'off');
 BpodSystem.GUIHandles.OutcomePlot = axes('Position', [.075 .3 .89 .6]);
 TrialTypeOutcomePlot(BpodSystem.GUIHandles.OutcomePlot,'init',TrialTypes);
-BpodNotebook('init'); % Initialize Bpod notebook (for manual data annotation)
-BpodParameterGUI('init', S); % Initialize parameter GUI plugin
+
+%% Valve Times
+LeftValveTime = .17;
+InitValveTime = .17;
+RightValveTime = .17;
 
 %% Main trial loop
-for currentTrial = 1:MaxTrials
-    S = BpodParameterGUI('sync', S); % Sync parameters with BpodParameterGUI plugin
-    switch TrialTypes(currentTrial) % Determine trial-specific state matrix fields
-        case 1
-            StateOnInitPoke = 'GoLeft';
-        case 2
-            StateOnInitPoke = 'GoRight'; 
-    end
+for currentTrial = 1:100
+    %S = BpodParameterGUI('sync', S); % Sync parameters with BpodParameterGUI plugin
 
     sma = NewStateMachine(); % Initialize new state machine description
 
-    sma = AddState(sma, 'Name', 'WaitForInitPoke', ...
-    'Timer', 0,...
-    'StateChangeConditions', {'Port2In', StateOnInitPoke},...
-    'OutputActions', {});
-
-    sma = AddState(sma, 'Name', 'GoLeft', ...
-        'Timer', 0,...
-        'StateChangeConditions', {'Port1In', 'LeftReward', 'Port3In', 'NoReward'},...
-        'OutputActions', {'ValveModule3', 1}); 
-
-    sma = AddState(sma, 'Name', 'GoRight', ...
-        'Timer', 0,...
-        'StateChangeConditions', {'Port1In', 'NoReward', 'Port3In', 'RightReward'},...
-        'OutputActions', {'ValveModule3', 2}); 
-
-    sma = AddState(sma, 'Name', 'NoReward', ...
-        'Timer', 0,...
-        'StateChangeConditions', {'Tup', 'exit'},...
-        'OutputActions', {}); 
-
+    sma = AddState(sma, 'Name', 'InitReward', ...
+        'Timer', InitValveTime,...
+        'StateChangeConditions', {'Tup', 'LeftReward'},...
+        'OutputActions', {'ValveState', 2});     
+    
     sma = AddState(sma, 'Name', 'LeftReward', ...
         'Timer', LeftValveTime,...
-        'StateChangeConditions', {'Tup', 'Drinking'},...
-        'OutputActions', {'ValveState', 1, 'ValveModule3', 1}); 
+        'StateChangeConditions', {'Tup', 'RightReward'},...
+        'OutputActions', {'ValveState', 1}); 
     
     sma = AddState(sma, 'Name', 'RightReward', ...
         'Timer', RightValveTime,...
-        'StateChangeConditions', {'Tup', 'Drinking'},...
-        'OutputActions', {'ValveState', 4, 'ValveModule3', 2});
-    
-    sma = AddState(sma, 'Name', 'Drinking', ...
-        'Timer', 10,...
-        'StateChangeConditions', {'Tup', 'exit', 'Port1Out', 'ConfirmPortOut', 'Port3Out', 'ConfirmPortOut'},...
-        'OutputActions', {});
-    
-    sma = AddState(sma, 'Name', 'ConfirmPortOut', ...
-        'Timer', S.GUI.PortOutRegDelay,...
-        'StateChangeConditions', {'Tup', 'exit', 'Port1In', 'Drinking', 'Port3In', 'Drinking'},...
-        'OutputActions', {});
+        'StateChangeConditions', {'Tup', 'exit'},...
+        'OutputActions', {'ValveState', 4});
 
 
     SendStateMachine(sma);
@@ -97,20 +61,17 @@ for currentTrial = 1:MaxTrials
     if BpodSystem.Status.BeingUsed == 0
         return
     end
-
 end
 
-
-
-
+%%
 function UpdateOutcomePlot(TrialTypes, Data)
 global BpodSystem
 Outcomes = zeros(1,Data.nTrials);
 for x = 1:Data.nTrials
-    if ~isnan(Data.RawEvents.Trial{x}.States.Drinking(1))
+    %if ~isnan(Data.RawEvents.Trial{x}.States.Drinking(1))
         Outcomes(x) = 1;
-    else
-        Outcomes(x) = 3;
-    end
+    %else
+    %    Outcomes(x) = 3;
+    %end
 end
 TrialTypeOutcomePlot(BpodSystem.GUIHandles.OutcomePlot,'update',Data.nTrials+1,TrialTypes,Outcomes);
