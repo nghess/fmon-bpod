@@ -12,8 +12,8 @@ if isempty(fieldnames(S))  % If settings file was an empty struct, populate stru
 end
 
 %% Define trials
-nLeftTrials = 5;
-nRightTrials = 5;
+nLeftTrials = 0;
+nRightTrials = 0;
 nRandomTrials = 100;
 MaxTrials = nLeftTrials+nRightTrials+nRandomTrials;
 TrialTypes = [ones(1,nLeftTrials) ones(1,nRightTrials)*2 ceil(rand(1,nRandomTrials)*2)];
@@ -29,13 +29,14 @@ BpodParameterGUI('init', S); % Initialize parameter GUI plugin
 %% Main trial loop
 for currentTrial = 1:MaxTrials
     S = BpodParameterGUI('sync', S); % Sync parameters with BpodParameterGUI plugin
-    R = GetValveTimes(S.GUI.RewardAmount, [1 3]); LeftValveTime = R(1); RightValveTime = R(2); % Update reward amounts
-    disp(R)
+    %R = GetValveTimes(S.GUI.RewardAmount, [1 3]); LeftValveTime = R(1); RightValveTime = R(2); % Update reward amounts
+    %disp(R)
+    %LeftValveTime = .17; RightValveTime = .27;
     switch TrialTypes(currentTrial) % Determine trial-specific state matrix fields
         case 1
-            StateOnInitPoke = 'GoLeft'; %StateOnLeftPoke = 'LeftReward'; StateOnRightPoke = 'NoReward';
+            StateOnInitPoke = 'GoLeft';
         case 2
-            StateOnInitPoke = 'GoRight'; %StateOnLeftPoke = 'NoReward'; StateOnRightPoke = 'RightReward';
+            StateOnInitPoke = 'GoRight';
     end
 
     sma = NewStateMachine(); % Initialize new state machine description
@@ -66,14 +67,17 @@ for currentTrial = 1:MaxTrials
         'Timer', LeftValveTime,...
         'StateChangeConditions', {'Tup', 'Drinking'},...
         'OutputActions', {'ValveState', 1}); 
+    
     sma = AddState(sma, 'Name', 'RightReward', ...
         'Timer', RightValveTime,...
         'StateChangeConditions', {'Tup', 'Drinking'},...
         'OutputActions', {'ValveState', 4}); %valve 3 triggers, but not getting a click
+    
     sma = AddState(sma, 'Name', 'Drinking', ...
         'Timer', 10,...
         'StateChangeConditions', {'Tup', 'exit', 'Port1Out', 'ConfirmPortOut', 'Port3Out', 'ConfirmPortOut'},...
         'OutputActions', {});
+    
     sma = AddState(sma, 'Name', 'ConfirmPortOut', ...
         'Timer', S.GUI.PortOutRegDelay,...
         'StateChangeConditions', {'Tup', 'exit', 'Port1In', 'Drinking', 'Port3In', 'Drinking'},...
