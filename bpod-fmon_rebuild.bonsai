@@ -2,13 +2,13 @@
 <WorkflowBuilder Version="2.7.2"
                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                  xmlns:mx="clr-namespace:Bonsai.DAQmx;assembly=Bonsai.DAQmx"
+                 xmlns:dsp="clr-namespace:Bonsai.Dsp;assembly=Bonsai.Dsp"
                  xmlns:osc="clr-namespace:Bonsai.Osc;assembly=Bonsai.Osc"
                  xmlns:p1="clr-namespace:Bonsai.PointGrey;assembly=Bonsai.PointGrey"
                  xmlns:cv="clr-namespace:Bonsai.Vision;assembly=Bonsai.Vision"
                  xmlns:ipy="clr-namespace:Bonsai.Scripting.IronPython;assembly=Bonsai.Scripting.IronPython"
                  xmlns:rx="clr-namespace:Bonsai.Reactive;assembly=Bonsai.Core"
                  xmlns:io="clr-namespace:Bonsai.IO;assembly=Bonsai.System"
-                 xmlns:dsp="clr-namespace:Bonsai.Dsp;assembly=Bonsai.Dsp"
                  xmlns="https://bonsai-rx.org/2018/workflow">
   <Workflow>
     <Nodes>
@@ -29,14 +29,22 @@
               <mx:TerminalConfiguration>Differential</mx:TerminalConfiguration>
               <mx:VoltageUnits>Volts</mx:VoltageUnits>
             </mx:AnalogInputChannelConfiguration>
+            <mx:AnalogInputChannelConfiguration>
+              <mx:ChannelName />
+              <mx:MinimumValue>-10</mx:MinimumValue>
+              <mx:MaximumValue>10</mx:MaximumValue>
+              <mx:PhysicalChannel>Dev3/ai1</mx:PhysicalChannel>
+              <mx:TerminalConfiguration>Differential</mx:TerminalConfiguration>
+              <mx:VoltageUnits>Volts</mx:VoltageUnits>
+            </mx:AnalogInputChannelConfiguration>
           </mx:Channels>
         </Combinator>
       </Expression>
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="dsp:MatrixWriter">
-          <dsp:Path>D:\NiDAQ.dat</dsp:Path>
-          <dsp:Suffix>Timestamp</dsp:Suffix>
-          <dsp:Overwrite>false</dsp:Overwrite>
+          <dsp:Path>D:\NiDAQone.dat</dsp:Path>
+          <dsp:Suffix>None</dsp:Suffix>
+          <dsp:Overwrite>true</dsp:Overwrite>
           <dsp:Layout>ColumnMajor</dsp:Layout>
         </Combinator>
       </Expression>
@@ -462,8 +470,8 @@ def process(value):
 
   # Load in values from zip
   image = value.Item1
-  nose1 = value.Item2.Item1
-  nose2 = value.Item2.Item2
+  nose_x = value.Item2.Item1
+  nose_y = value.Item2.Item2
 
   # Get image dims
   height = image.Size.Height
@@ -474,11 +482,11 @@ def process(value):
   decision_x = int(width*.67)
 
   # Indicate which sector mouse nose is in
-  if nose1 &lt; decision_x:
-    if nose2 &gt; y_midpt:
+  if nose_x &lt; decision_x:
+    if nose_y &gt; y_midpt:
       state = 'left'
       softcode = 1
-    elif nose2 &lt; y_midpt:
+    elif nose_y &lt; y_midpt:
       state = 'right'
       softcode = 3
   else:

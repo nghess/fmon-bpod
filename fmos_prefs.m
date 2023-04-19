@@ -28,7 +28,7 @@ iti_delay = 0;  % Setting initial variable for ITI to not error during trainers 
 %%
 %FOR ITI INTERVALS EXPERIMENT ONLY%
 min_iti = 1;
-max_iti = 25;
+max_iti = 5;
 percent_of_controls = 0.2;  % please write in decimal form (i.e. 0.2 = 20%)
 drug_dose = 'NA';  % for DOI experiments, what is the dose (mg/kg) injected? 0 for vehicle
 side_bias = 0;  % set to 0 for left and right trials, set to 1 for only right trials, set to 2 for only left trials 
@@ -36,6 +36,10 @@ side_bias = 0;  % set to 0 for left and right trials, set to 1 for only right tr
 odor_vial = 8;  % main odor (7 = Benzaldehyde), 8 = 2PE^^^^ <-what's this?
 alternate_vial = 7;  % Alternate odor in 90-10 interleaved!!! Make sure it is different than odor_vial
 blank_vial = 6;
+
+%% Build ITI list
+iti_list = round((max_iti-min_iti).*rand(1,150) + min_iti);
+%%
 
 % Only for non-spatial experiments
 % non_spatial_condition = 'odor_identity' 
@@ -65,17 +69,7 @@ nosepokeport = 4;
 MFC_air = 1; 
 MFC_n2 = 2;
 
-%%
-%NI USB-6009 DATA COLLECTION (Will be swapped for Bpod Analogue Input)
-samplingrate = 800; buffersize = 25; channel_num = 6 %number of channels
-%Name Channels (this is how the files will be saved in the datapath)
-ch0 = 'sniff'; ch1 = 'rightnosepoke'; ch2 = 'leftnosepoke'; ch3 = 'initnosepoke'; ch4 = 'camera_GPIO_trigger'
 
-%%
-%%Bpod & AnalogueIn1 COM Ports
-BpodPort='\\\\.\\COM7'; analogueInPort = '\\\\.\\COM4';
-
-%%
 %CONSTANTS
 
 %SESSION LENGTH
