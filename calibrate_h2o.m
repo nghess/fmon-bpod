@@ -26,8 +26,7 @@ InitValveTime = .17;
 RightValveTime = .17;
 
 %% Main trial loop
-for currentTrial = 1:100
-    %S = BpodParameterGUI('sync', S); % Sync parameters with BpodParameterGUI plugin
+for currentTrial = 1:reps
 
     sma = NewStateMachine(); % Initialize new state machine description
 
@@ -49,14 +48,6 @@ for currentTrial = 1:100
 
     SendStateMachine(sma);
     RawEvents = RunStateMachine;
-    if ~isempty(fieldnames(RawEvents)) % If trial data was returned
-        BpodSystem.Data = AddTrialEvents(BpodSystem.Data,RawEvents); % Computes trial events from raw data
-        BpodSystem.Data = BpodNotebook('sync', BpodSystem.Data); % Sync with Bpod notebook plugin
-        BpodSystem.Data.TrialSettings(currentTrial) = S; % Adds the settings used for the current trial to the Data struct (to be saved after the trial ends)
-        BpodSystem.Data.TrialTypes(currentTrial) = TrialTypes(currentTrial); % Adds the trial type of the current trial to data
-        UpdateOutcomePlot(TrialTypes, BpodSystem.Data);
-        SaveBpodSessionData; % Saves the field BpodSystem.Data to the current data file
-    end
     HandlePauseCondition; % Checks to see if the protocol is paused. If so, waits until user resumes.
     if BpodSystem.Status.BeingUsed == 0
         return
