@@ -12,6 +12,7 @@ experimenter = 'Amanda';  % Your full name
 trainer = 'none';  % Who is training you? (if applicable -- if no one, put 'none') 
 mouse_id = 'test';  % mouse subject number
 sex = 'F';  % Sex of mouse
+thermistor_type = 'new'; % new or old
 initial_weight = '22.30';  % Weight of mouse in grams
 group_name = '100-0';  % What experiment are you running? 
 % (OPTIONS: trainer1, trainer2, 100-0, 80-20, 60-40, 90-10_interleaved, abs-conc, non-spatial, nostril-occlusion, doi, dig, iti_intervals) 
