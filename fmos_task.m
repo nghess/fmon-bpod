@@ -1,38 +1,48 @@
 %{
 FMOS MODULE for Bpod
-Preferences (Set variables in Freely Moving Olfactory Search Task)
+Preferences (Set variables in Freely Moving Olfactory Navigation Task)
 
 Written By: Nate Gonzales-Hess (nhess@uoregon.edu)
-Last Updated: 4/25/2023
+Last Updated: 6/25/2023
 %}
 
 function fmos
 %%
 global BpodSystem
 
+%% Set Timer
+t = timer;
+t.StartDelay = 40*60;  % time in seconds
+t.TimerFcn = @(~,~)timeUp;  % timeUp is defined at end of this file
+start(t);
+
 %% Set Reward amounts
-LeftValveTime = .15; %In practice, these will be defined by calibrate_h2o
-RightValveTime = .15;
-%InitValveTime = .15;
+% Read variables from workspace, supplied by fmon_prefs GUI.
+LeftValveTime = evalin('base', 'LeftValveTime');
+RightValveTime = evalin('base', 'RightValveTime');
+%InitValveTime = evalin('base', 'InitValveTime');
+PortOutDelay = .5;
 
 %% Build ITI list
-min_iti = 1;
-max_iti = 5;
+% Read variables from workspace, supplied by fmon_prefs GUI.
+min_iti = evalin('base', 'min_iti');
+max_iti = evalin('base', 'max_iti');
 iti_list = round((max_iti-min_iti) .* rand(1,150) + min_iti);
 
 %% Define parameters
 % check this and see how much is necessarry
 S = BpodSystem.ProtocolSettings; % Load settings chosen in launch manager into current workspace as a struct called S
-if isempty(fieldnames(S))  % If settings file was an empty struct, populate struct with default settings
-    S.GUI.CurrentBlock = 1; % Training level % 1 = Direct Delivery at both ports 2 = Poke for delivery
-    S.GUI.RewardAmount = 5;  % ul
-    S.GUI.PortOutRegDelay = 0.5; % How long the mouse must remain out before poking back in
-end
+%if isempty(fieldnames(S))  % If settings file was an empty struct, populate struct with default settings
+%    S.GUI.CurrentBlock = 1; % Training level % 1 = Direct Delivery at both ports 2 = Poke for delivery
+%    S.GUI.RewardAmount = 5;  % ul
+%    S.GUI.PortOutRegDelay = 0.5; % How long the mouse must remain out before poking back in
+%end
 
 %% Define trials
 nLeftTrials = 20;
 nRightTrials = 20;
-nOmissionTrials = round((nLeftTrials + nRightTrials) * 0.1);  % 10pct of trials are omission trials
+pctOmission = .1;
+nOmissionTrials = round((nLeftTrials + nRightTrials) * pctOmission);  % 10pct of trials are omission trials
 nOmissionDiff = round(0.5 * nOmissionTrials);
 
 TrialTypes = [ones(1, nLeftTrials-nOmissionDiff) ones(1, nRightTrials-nOmissionDiff)*2 ones(1, nOmissionTrials)*3];  % 1 = Left, 2 = Right, 3 = Omission
@@ -138,11 +148,11 @@ for currentTrial = 1:MaxTrials
     
     sma = AddState(sma, 'Name', 'Drinking', ...
         'Timer', 10,...
-        'StateChangeConditions', {'Tup', 'exit', 'Port1Out', 'ConfirmPortOut', 'Port2Out', 'ConfirmPortOut'},...  % On right poke give water
+        'StateChangeConditions', {'Tup', 'exit', 'Port1Out', 'ConfirmPortOut', 'Port2Out', 'ConfirmPortOut'},... 
         'OutputActions', {});
     
     sma = AddState(sma, 'Name', 'ConfirmPortOut', ...
-        'Timer', S.GUI.PortOutRegDelay,...
+        'Timer', PortOutDelay,...
         'StateChangeConditions', {'Tup', 'exit', 'Port1In', 'Drinking', 'Port2In', 'Drinking'},...
         'OutputActions', {});
     
@@ -171,13 +181,19 @@ for currentTrial = 1:MaxTrials
 end
 
 function UpdateOutcomePlot(TrialTypes, Data)
-global BpodSystem
-Outcomes = zeros(1,Data.nTrials);
-for x = 1:Data.nTrials
-    if ~isnan(Data.RawEvents.Trial{x}.States.Drinking(1))
-        Outcomes(x) = 1;
-    else
-        Outcomes(x) = 3;
+    global BpodSystem
+    Outcomes = zeros(1,Data.nTrials);
+    for x = 1:Data.nTrials
+        if ~isnan(Data.RawEvents.Trial{x}.States.Drinking(1))
+            Outcomes(x) = 1;
+        else
+            Outcomes(x) = 3;
+        end
     end
-end
-TrialTypeOutcomePlot(BpodSystem.GUIHandles.OutcomePlot,'update',Data.nTrials+1,TrialTypes,Outcomes);
+    TrialTypeOutcomePlot(BpodSystem.GUIHandles.OutcomePlot,'update',Data.nTrials+1,TrialTypes,Outcomes);
+
+%% Execute when time is up:
+function timeUp()
+    disp('Timer is up');  % Print to console
+    SaveBpodSessionData();  % Save Session Data to Bpod data folder
+    RunProtocol('Stop');  % Stop the protocol

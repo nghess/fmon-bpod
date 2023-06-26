@@ -21,10 +21,13 @@ BpodSystem.GUIHandles.OutcomePlot = axes('Position', [.075 .3 .89 .6]);
 TrialTypeOutcomePlot(BpodSystem.GUIHandles.OutcomePlot,'init',TrialTypes);
 
 %% Valve Times
-time = .15;
-LeftValveTime = time;
-InitValveTime = time;
-RightValveTime = time;
+% Read variables from workspace
+LeftValveTime = evalin('base', 'LeftValveTime');
+RightValveTime = evalin('base', 'RightValveTime');
+InitValveTime = evalin('base', 'InitValveTime');
+
+%% Start Timer
+start(t)
 
 %% Main trial loop
 for currentTrial = 1:reps
@@ -45,7 +48,6 @@ for currentTrial = 1:reps
         'Timer', RightValveTime,...
         'StateChangeConditions', {'Tup', 'exit'},...
         'OutputActions', {'ValveState', 4});
-
 
     SendStateMachine(sma);
     RawEvents = RunStateMachine;

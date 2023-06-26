@@ -1,26 +1,28 @@
 %{
 FMOS MODULE for Bpod
-Preferences (Set variables in Freely Moving Olfactory Search Task)
+Preferences (Set variables in Freely Moving Olfactory Navigation Task)
 
 Written By: Nate Gonzales-Hess (nhess@uoregon.edu)
-Last Updated: 4/25/2023
+Last Updated: 6/25/2023
 %}
 
 function fmos_train
 %%
 global BpodSystem
 
-%% Set Reward amounts
-LeftValveTime = .15; %In practice, these will be defined by calibrate_h2o
-RightValveTime = .15;
-InitValveTime = .15;
+%% Set Timer
+t = timer;
+t.StartDelay = 60;%30*60;  % time in seconds
+t.TimerFcn = @(~,~)timeUp;  % timeUp is defined at end of this file
+start(t);
 
+%% Set Reward amounts
+% Read variables from workspace, supplied by fmon_prefs GUI.
+LeftValveTime = evalin('base', 'LeftValveTime');
+RightValveTime = evalin('base', 'RightValveTime');
+InitValveTime = evalin('base', 'InitValveTime');
 PortOutDelay = .5;
 
-%% Build ITI list
-%min_iti = .1;
-%max_iti = .1;
-%iti_list = round((max_iti-min_iti) .* rand(1,150) + min_iti);
 
 %% Define parameters
 % check this and see how much is necessarry
@@ -32,32 +34,24 @@ S = BpodSystem.ProtocolSettings; % Load settings chosen in launch manager into c
 %end
 
 %% Define trials
-n_HalfTrials = 20;
-TrialTypes = [1];
-
+n_HalfTrials = 50;
+TrialTypes = [1];  % First trial is left (1)
+% Build list, alternating between 2 and 1
 for i = 1:n_HalfTrials-1
    TrialTypes(end+1) = 2;
    TrialTypes(end+1) = 1;
 end
 
-%TrialTypes = [ones(1, nLeftTrials) ones(1, nRightTrials)*2];  % 1 = Left, 2 = Right
-%TrialTypes = TrialTypes(randperm(length(TrialTypes)));
 BpodSystem.Data.TrialTypes = []; % The trial type of each trial completed will be added here.
-MaxTrials = length(TrialTypes);%nLeftTrials + nRightTrials + nOmissionTrials;
+MaxTrials = length(TrialTypes);
 
 %% Initialize plots
 BpodSystem.ProtocolFigures.OutcomePlotFig = figure('Position', [50 540 500 250],'name','Outcome plot','numbertitle','off', 'MenuBar', 'none', 'Resize', 'off');
 BpodSystem.GUIHandles.OutcomePlot = axes('Position', [.075 .3 .89 .6]);
 TrialTypeOutcomePlot(BpodSystem.GUIHandles.OutcomePlot,'init',TrialTypes);
-%BpodParameterGUI('init', S); % Initialize parameter GUI plugin
 
 %% Main trial loop
 for currentTrial = 1:MaxTrials
-    
-    % Valve Module serial messages, 1 = Odor, 2 = Omission, 3 = Reset
-    %LoadSerialMessages('ValveModule1', {['B' 15], ['B' 51], ['B' 0]});  % Left valves
-    %LoadSerialMessages('ValveModule2', {['B' 15], ['B' 51], ['B' 0]});  % Right valves
-    %LoadSerialMessages('ValveModule3', {['B' 3], ['B' 0]});  % Final Valves
     
     % Determine trial-specific state matrix fields
     switch TrialTypes(currentTrial)
@@ -120,14 +114,8 @@ for currentTrial = 1:MaxTrials
         'StateChangeConditions', {'Tup', 'exit', 'Port1In', 'Drinking', 'Port2In', 'Drinking'},...
         'OutputActions', {});
     
-    %sma = AddState(sma, 'Name', 'ITI', ... 
-    %    'Timer', iti_list(currentTrial),...
-    %    'StateChangeConditions', {'Tup', 'exit'},...
-    %    'OutputActions', {}); 
 
     T = BpodTrialManager;
-    %SendStateMachine(sma);
-    %RawEvents = RunStateMachine;
     T.startTrial(sma)
     RawEvents = T.getTrialData;
     if ~isempty(fieldnames(RawEvents)) % If trial data was returned
@@ -141,17 +129,26 @@ for currentTrial = 1:MaxTrials
     if BpodSystem.Status.BeingUsed == 0
         return
     end
-    %disp(iti_list(currentTrial));
 end
 
+
+%% Update Progress Plot
 function UpdateOutcomePlot(TrialTypes, Data)
-global BpodSystem
-Outcomes = zeros(1,Data.nTrials);
-for x = 1:Data.nTrials
-    if ~isnan(Data.RawEvents.Trial{x}.States.Drinking(1))
-        Outcomes(x) = 1;
-    else
-        Outcomes(x) = 3;
+    global BpodSystem
+    Outcomes = zeros(1,Data.nTrials);
+    for x = 1:Data.nTrials
+        if ~isnan(Data.RawEvents.Trial{x}.States.Drinking(1))
+            Outcomes(x) = 1;
+        else
+            Outcomes(x) = 3;
+        end
     end
-end
-TrialTypeOutcomePlot(BpodSystem.GUIHandles.OutcomePlot,'update',Data.nTrials+1,TrialTypes,Outcomes);
+    TrialTypeOutcomePlot(BpodSystem.GUIHandles.OutcomePlot,'update',Data.nTrials+1,TrialTypes,Outcomes);
+
+
+%% Time-Up Functions
+function timeUp()
+    disp('Timer is up');  % Print to console
+    SaveBpodSessionData();  % Save Session Data to Bpod data folder
+    RunProtocol('Stop');  % Stop the protocol
+
