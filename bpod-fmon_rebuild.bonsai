@@ -9,6 +9,7 @@
                  xmlns:io="clr-namespace:Bonsai.IO;assembly=Bonsai.System"
                  xmlns:mx="clr-namespace:Bonsai.DAQmx;assembly=Bonsai.DAQmx"
                  xmlns:dsp="clr-namespace:Bonsai.Dsp;assembly=Bonsai.Dsp"
+                 xmlns:ard="clr-namespace:Bonsai.Arduino;assembly=Bonsai.Arduino"
                  xmlns="https://bonsai-rx.org/2018/workflow">
   <Workflow>
     <Nodes>
@@ -392,7 +393,7 @@ def process(value):
 
   # Define Trial decision sectors
   y_midpt = int(height/2)
-  decision_x = int(width*.67)
+  decision_x = int(width*.33)
   y_midline = (Point(decision_x, y_midpt), Point(0, y_midpt))
   decision_line = (Point(decision_x, 0), Point(decision_x, height))
 
@@ -443,7 +444,7 @@ def process(value):
 
   # Define Trial decision sectors
   y_midpt = int(height/2)
-  decision_x = int(width*.67)
+  decision_x = int(width*.33)
 
   # Indicate which sector mouse nose is in
   if nose_x &lt; decision_x:
@@ -493,7 +494,7 @@ def process(value):
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="mx:AnalogInput">
           <mx:SignalSource />
-          <mx:SampleRate>1000</mx:SampleRate>
+          <mx:SampleRate>800</mx:SampleRate>
           <mx:ActiveEdge>Rising</mx:ActiveEdge>
           <mx:SampleMode>ContinuousSamples</mx:SampleMode>
           <mx:BufferSize>1000</mx:BufferSize>
@@ -537,7 +538,7 @@ def process(value):
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="mx:AnalogInput">
           <mx:SignalSource />
-          <mx:SampleRate>1000</mx:SampleRate>
+          <mx:SampleRate>800</mx:SampleRate>
           <mx:ActiveEdge>Rising</mx:ActiveEdge>
           <mx:SampleMode>ContinuousSamples</mx:SampleMode>
           <mx:BufferSize>1000</mx:BufferSize>
@@ -585,6 +586,32 @@ def process(value):
           <dsp:Overwrite>true</dsp:Overwrite>
           <dsp:Layout>ColumnMajor</dsp:Layout>
         </Combinator>
+      </Expression>
+      <Expression xsi:type="Disable">
+        <Builder xsi:type="Combinator">
+          <Combinator xsi:type="ard:CreateArduino">
+            <ard:Name>fmos_arduino</ard:Name>
+            <ard:PortName>COM17</ard:PortName>
+            <ard:BaudRate>57600</ard:BaudRate>
+            <ard:SamplingInterval>1</ard:SamplingInterval>
+          </Combinator>
+        </Builder>
+      </Expression>
+      <Expression xsi:type="Disable">
+        <Builder xsi:type="Combinator">
+          <Combinator xsi:type="ard:DigitalInput">
+            <ard:PortName>COM17</ard:PortName>
+            <ard:Pin>22</ard:Pin>
+          </Combinator>
+        </Builder>
+      </Expression>
+      <Expression xsi:type="Disable">
+        <Builder xsi:type="Combinator">
+          <Combinator xsi:type="ard:InputPullUp">
+            <ard:PortName>fmos_arduino</ard:PortName>
+            <ard:Pin>22</ard:Pin>
+          </Combinator>
+        </Builder>
       </Expression>
     </Nodes>
     <Edges>
