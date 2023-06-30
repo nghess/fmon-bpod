@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<WorkflowBuilder Version="2.7.3"
+<WorkflowBuilder Version="2.7.2"
                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                  xmlns:osc="clr-namespace:Bonsai.Osc;assembly=Bonsai.Osc"
                  xmlns="https://bonsai-rx.org/2018/workflow">
@@ -9,14 +9,14 @@
         <Combinator xsi:type="osc:CreateTcpClient">
           <osc:Name>MATLAB</osc:Name>
           <osc:HostName>localhost</osc:HostName>
-          <osc:Port>11235</osc:Port>
+          <osc:Port>8000</osc:Port>
           <osc:NoDelay>true</osc:NoDelay>
         </Combinator>
       </Expression>
       <Expression xsi:type="osc:ReceiveMessage">
-        <osc:Connection>MATLAB</osc:Connection>
         <osc:Address>/number</osc:Address>
         <osc:TypeTag>i</osc:TypeTag>
+        <osc:Connection>MATLAB</osc:Connection>
       </Expression>
     </Nodes>
     <Edges />
