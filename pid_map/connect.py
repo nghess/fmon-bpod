@@ -3,22 +3,21 @@ import time
 import pygetwindow as gw
 
 # Get a specific window by its title
-bonsai = gw.getWindowsWithTitle('fmon')[0]
+bonsai = gw.getWindowsWithTitle('fmon-pid.bonsai')[0]
+bpod = gw.getWindowsWithTitle('Bpod Console')[0]
 
-print(bonsai)
 
 # Activate the window
 bonsai.activate()
-bonsai.maximize()
 
 # Wait for the window to be active
-time.sleep(2)
+time.sleep(1)
 
 # Start Bonsai
 pyautogui.press('f5')
 
 # Wait for the window to be active
-#time.sleep(1)
+time.sleep(1)
 
-# Stop Bonsai
-#pyautogui.hotkey('shift', 'f5')
+# Activate the window
+bpod.activate()
