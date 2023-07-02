@@ -6,7 +6,7 @@ pid_data = []
 dat = []
 
 # Import .dat files
-for i in range(3):
+for i in range(35):
     dat = np.fromfile(f"D:/fmon-pid/data/position{i}.dat", dtype=float)
     pid_data.append(dat)
 print('done')

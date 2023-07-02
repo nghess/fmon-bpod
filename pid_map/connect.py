@@ -6,7 +6,6 @@ import pygetwindow as gw
 bonsai = gw.getWindowsWithTitle('fmon-pid.bonsai')[0]
 bpod = gw.getWindowsWithTitle('Bpod Console')[0]
 
-
 # Activate the window
 bonsai.activate()
 
