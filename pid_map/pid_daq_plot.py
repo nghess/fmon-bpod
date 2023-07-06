@@ -7,7 +7,7 @@ dat = []
 
 # Import .dat files
 for i in range(35):
-    dat = np.fromfile(f"D:/fmon-pid/data/position{i}.dat", dtype=float)
+    dat = np.fromfile(f"E:/Git Repos/fmon-bpod/pid_map/data/position{i}.dat", dtype=float)
     pid_data.append(dat)
 print('done')
 
