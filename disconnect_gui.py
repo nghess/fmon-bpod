@@ -3,7 +3,7 @@ import time
 import pygetwindow as gw
 
 # Get a specific window by its title
-bonsai = gw.getWindowsWithTitle('fmon-pid.bonsai')[0]
+bonsai = gw.getWindowsWithTitle('bpod-fmon')[0]
 bpod = gw.getWindowsWithTitle('Bpod Console')[0]
 
 # Activate the window
