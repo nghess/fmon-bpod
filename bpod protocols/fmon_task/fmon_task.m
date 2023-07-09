@@ -1,49 +1,106 @@
 %{
-FMOS MODULE for Bpod
-Preferences (Set variables in Freely Moving Olfactory Search Task)
+FMON Task Module for Bpod
+Preferences (Set variables in Freely Moving Olfactory Navigation Task)
 
 Written By: Nate Gonzales-Hess (nhess@uoregon.edu)
-Last Updated:
+Last Updated: 7/7/2023
 %}
 
-function fmos
-%%
+function fmon_task
+%% Initialize Bpod
 global BpodSystem
+S = BpodSystem.ProtocolSettings; % Load settings chosen in launch manager into current workspace as a struct called S
+
+%% Start Bonsai
+%Clear Bpod TCP Socket
+BpodSystem.BonsaiSocket = [];
+
+% Run Bonsai connect Python Script
+[~,~] = system('start C:\ProgramData\Anaconda3\python.exe D:\fmon-bpod\connect_gui.py');
+
+% Connect to Bonsai
+BpodSystem.BonsaiSocket = TCPCom(11235);
+
+%% Set Timer
+% Get duration from GUI, or use default of 40 minutes.
+if evalin('base', 'exist(''session_duration'', ''var'')')
+    session_duration = evalin('base', 'session_duration');
+else
+    session_duration = 40;
+end
+%Initialize session timer.
+t = timer;
+t.StartDelay = session_duration*60;  % time in seconds
+t.TimerFcn = @(~,~)timeUp(session_duration);  % timeUp is defined at end of this file
+start(t);
 
 %% Set Reward amounts
-LeftValveTime = .17; %In practice, these will be defined by calibrate_h2o
-RightValveTime = .27;
-
-%% Build ITI list
-min_iti = 1;
-max_iti = 5;
-iti_list = round((max_iti-min_iti).*rand(1,150) + min_iti);
-
-%% Define parameters
-% check this and see how much is necessarry
-S = BpodSystem.ProtocolSettings; % Load settings chosen in launch manager into current workspace as a struct called S
-if isempty(fieldnames(S))  % If settings file was an empty struct, populate struct with default settings
-    S.GUI.CurrentBlock = 1; % Training level % 1 = Direct Delivery at both ports 2 = Poke for delivery
-    S.GUI.RewardAmount = 5;  % ul
-    S.GUI.PortOutRegDelay = 0.5; % How long the mouse must remain out before poking back in
+% Read variables from workspace, supplied by fmon_prefs GUI.
+% If Variables don't exist, set to defaults (.1 seconds)
+if evalin('base', 'exist(''LeftValveTime'', ''var'')')
+    LeftValveTime = evalin('base', 'LeftValveTime');
+else
+    LeftValveTime = 0.1;
 end
 
-%% Define trials
-nLeftTrials = 20;
-nRightTrials = 20;
-nOmissionTrials = round((nLeftTrials + nRightTrials) * 0.1);  % 10pct of trials are omission trials
-nOmissionDiff = round(0.5 * nOmissionTrials);
+if evalin('base', 'exist(''RightValveTime'', ''var'')')
+    RightValveTime = evalin('base', 'RightValveTime');
+else
+    RightValveTime = 0.1;
+end
 
+% Time to wait before lick port out is confirmed
+PortOutDelay = .5;
+
+%% Define trials
+nLeftTrials = 100;
+nRightTrials = 100;
+pctOmission = .1;
+nOmissionTrials = round((nLeftTrials + nRightTrials) * pctOmission);  % Some percentage of trials are omission trials.
+nOmissionDiff = round(0.5 * nOmissionTrials);  % Half of the omission trials, to substract from left and right trials.
 TrialTypes = [ones(1, nLeftTrials-nOmissionDiff) ones(1, nRightTrials-nOmissionDiff)*2 ones(1, nOmissionTrials)*3];  % 1 = Left, 2 = Right, 3 = Omission
-TrialTypes = TrialTypes(randperm(length(TrialTypes)));
+
+% Ensure that trial type never repeats more than maxRepeats times
+maxRepeats = 3; % maximum repeat limit
+
+% A function to check if any element repeats more than maxRepeats times
+checkRepeats = @(v, m) any(conv(double(diff(v) == 0), ones(1, m), 'valid') == m);
+
+% Randomly permute vector until no element repeats more than maxRepeats times
+while true
+    vec_perm = TrialTypes(randperm(length(TrialTypes)));
+    if ~checkRepeats(vec_perm, maxRepeats)
+        break
+    end
+end
+
+assignin('base', 'vec_perm', vec_perm);
+
+TrialTypes = vec_perm;
 BpodSystem.Data.TrialTypes = []; % The trial type of each trial completed will be added here.
 MaxTrials = length(TrialTypes);%nLeftTrials + nRightTrials + nOmissionTrials;
 
+%% Build ITI list
+% Read variables from workspace, supplied by fmon_prefs GUI.
+if evalin('base', 'exist(''min_iti'', ''var'')')
+    min_iti = evalin('base', 'min_iti');
+else
+    min_iti = 1;
+end
+
+if evalin('base', 'exist(''max_iti'', ''var'')')
+    max_iti = evalin('base', 'max_iti');
+else
+    max_iti = 5;
+end
+% Build ITI list
+iti_list = round((max_iti-min_iti) .* rand(1,length(TrialTypes)) + min_iti);
+
 %% Initialize plots
-BpodSystem.ProtocolFigures.OutcomePlotFig = figure('Position', [50 540 500 250],'name','Outcome plot','numbertitle','off', 'MenuBar', 'none', 'Resize', 'off');
+BpodSystem.ProtocolFigures.OutcomePlotFig = figure('Position', [50 540 1000 250],'name','Outcome plot','numbertitle','off', 'MenuBar', 'none', 'Resize', 'off');
 BpodSystem.GUIHandles.OutcomePlot = axes('Position', [.075 .3 .89 .6]);
 TrialTypeOutcomePlot(BpodSystem.GUIHandles.OutcomePlot,'init',TrialTypes);
-BpodParameterGUI('init', S); % Initialize parameter GUI plugin
+%BpodParameterGUI('init', S); % Initialize parameter GUI plugin
 
 %% Main trial loop
 for currentTrial = 1:MaxTrials
@@ -106,9 +163,9 @@ for currentTrial = 1:MaxTrials
         'OutputActions', {'ValveModule3', 1});  % Final valves open
 
     sma = AddState(sma, 'Name', 'Omission', ...
-    'Timer', 0,...
-    'StateChangeConditions', {'SoftCode1', 'CorrectLeft', 'SoftCode3', 'CorrectRight'},...  % Reward on either side
-    'OutputActions', {'ValveModule3', 1});  % Final valves open
+        'Timer', 0,...
+        'StateChangeConditions', {'SoftCode1', 'CorrectLeft', 'SoftCode3', 'CorrectRight'},...  % Reward on either side
+        'OutputActions', {'ValveModule3', 1});  % Final valves open
 
     sma = AddState(sma, 'Name', 'CorrectLeft', ...
         'Timer', 0,...
@@ -133,15 +190,15 @@ for currentTrial = 1:MaxTrials
     sma = AddState(sma, 'Name', 'RightReward', ...
         'Timer', RightValveTime,...
         'StateChangeConditions', {'Tup', 'Drinking'},...
-        'OutputActions', {'ValveState', 4,});  % On right poke give water
+        'OutputActions', {'ValveState', 2,});  % On right poke give water
     
     sma = AddState(sma, 'Name', 'Drinking', ...
         'Timer', 10,...
-        'StateChangeConditions', {'Tup', 'exit', 'Port1Out', 'ConfirmPortOut', 'Port2Out', 'ConfirmPortOut'},...  % On right poke give water
+        'StateChangeConditions', {'Tup', 'exit', 'Port1Out', 'ConfirmPortOut', 'Port2Out', 'ConfirmPortOut'},... 
         'OutputActions', {});
     
     sma = AddState(sma, 'Name', 'ConfirmPortOut', ...
-        'Timer', S.GUI.PortOutRegDelay,...
+        'Timer', PortOutDelay,...
         'StateChangeConditions', {'Tup', 'exit', 'Port1In', 'Drinking', 'Port2In', 'Drinking'},...
         'OutputActions', {});
     
@@ -157,7 +214,6 @@ for currentTrial = 1:MaxTrials
     RawEvents = T.getTrialData;
     if ~isempty(fieldnames(RawEvents)) % If trial data was returned
         BpodSystem.Data = AddTrialEvents(BpodSystem.Data,RawEvents); %  Computes trial events from raw data
-        %BpodSystem.Data = BpodNotebook('sync', BpodSystem.Data); % Sync with Bpod notebook plugin
         BpodSystem.Data.TrialSettings(currentTrial) = S; % Adds the settings used for the current trial to the Data struct (to be saved after the trial ends)
         BpodSystem.Data.TrialTypes(currentTrial) = TrialTypes(currentTrial); % Adds the trial type of the current trial to data
         UpdateOutcomePlot(TrialTypes, BpodSystem.Data);
@@ -167,17 +223,27 @@ for currentTrial = 1:MaxTrials
     if BpodSystem.Status.BeingUsed == 0
         return
     end
-    %disp(iti_list(currentTrial));
 end
 
 function UpdateOutcomePlot(TrialTypes, Data)
-global BpodSystem
-Outcomes = zeros(1,Data.nTrials);
-for x = 1:Data.nTrials
-    if ~isnan(Data.RawEvents.Trial{x}.States.Drinking(1))
-        Outcomes(x) = 1;
-    else
-        Outcomes(x) = 3;
+    global BpodSystem
+    Outcomes = zeros(1,Data.nTrials);
+    for x = 1:Data.nTrials
+        if ~isnan(Data.RawEvents.Trial{x}.States.Drinking(1))
+            Outcomes(x) = 1;
+        else
+            Outcomes(x) = 3;
+        end
     end
-end
-TrialTypeOutcomePlot(BpodSystem.GUIHandles.OutcomePlot,'update',Data.nTrials+1,TrialTypes,Outcomes);
+    TrialTypeOutcomePlot(BpodSystem.GUIHandles.OutcomePlot,'update',Data.nTrials+1,TrialTypes,Outcomes);
+
+%% Execute when time is up:
+function timeUp(duration)
+    disp(num2str(duration) + " minutes have elapsed! The session has ended.");  % Print to console, maybe make this an alert
+    RunProtocol('Stop');  % Stop the protocol   
+    BpodSystem.BonsaiSocket = [];
+    [~,~] = system('start C:\ProgramData\Anaconda3\python.exe D:\fmon-bpod\disconnect_gui.py'); % Stop Bonsai
+    SaveBpodSessionData();  % Save Session Data to Bpod data folder
+    disp('running data output script');
+    run('D:\fmon-bpod\fmon_data_output.m'); % Run data processing script
+    

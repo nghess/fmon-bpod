@@ -17,30 +17,14 @@
   <DialogSettings>
     <Visible>false</Visible>
     <Location>
-      <X>25</X>
-      <Y>25</Y>
+      <X>0</X>
+      <Y>0</Y>
     </Location>
     <Size>
-      <Width>335</Width>
-      <Height>79</Height>
+      <Width>0</Width>
+      <Height>0</Height>
     </Size>
     <WindowState>Normal</WindowState>
-  </DialogSettings>
-  <DialogSettings>
-    <Visible>true</Visible>
-    <Location>
-      <X>879</X>
-      <Y>497</Y>
-    </Location>
-    <Size>
-      <Width>335</Width>
-      <Height>276</Height>
-    </Size>
-    <WindowState>Normal</WindowState>
-    <VisualizerTypeName>Bonsai.Vision.Design.IplImageVisualizer</VisualizerTypeName>
-    <VisualizerSettings>
-      <IplImageVisualizer />
-    </VisualizerSettings>
   </DialogSettings>
   <DialogSettings>
     <Visible>false</Visible>
@@ -55,23 +39,23 @@
     <WindowState>Normal</WindowState>
   </DialogSettings>
   <DialogSettings>
-    <Visible>true</Visible>
+    <Visible>false</Visible>
     <Location>
-      <X>101</X>
-      <Y>99</Y>
+      <X>739</X>
+      <Y>248</Y>
     </Location>
     <Size>
       <Width>415</Width>
       <Height>276</Height>
     </Size>
-    <WindowState>Normal</WindowState>
+    <WindowState>Maximized</WindowState>
     <VisualizerTypeName>Bonsai.Dsp.Design.MatVisualizer</VisualizerTypeName>
     <VisualizerSettings>
       <MatVisualizer>
         <XMin>0</XMin>
         <XMax>1000</XMax>
-        <YMin>0</YMin>
-        <YMax>1.5999999999999999</YMax>
+        <YMin>-1</YMin>
+        <YMax>4</YMax>
         <AutoScaleX>true</AutoScaleX>
         <AutoScaleY>true</AutoScaleY>
         <SelectedPage>0</SelectedPage>
@@ -118,5 +102,21 @@
       <Height>0</Height>
     </Size>
     <WindowState>Normal</WindowState>
+  </DialogSettings>
+  <DialogSettings>
+    <Visible>true</Visible>
+    <Location>
+      <X>577</X>
+      <Y>391</Y>
+    </Location>
+    <Size>
+      <Width>335</Width>
+      <Height>276</Height>
+    </Size>
+    <WindowState>Normal</WindowState>
+    <VisualizerTypeName>Bonsai.Vision.Design.IplImageVisualizer</VisualizerTypeName>
+    <VisualizerSettings>
+      <IplImageVisualizer />
+    </VisualizerSettings>
   </DialogSettings>
 </VisualizerLayout>

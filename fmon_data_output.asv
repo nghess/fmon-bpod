@@ -113,9 +113,10 @@ fprintf(fileID, '%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n\n%s\n%s\n%s\n%s\n\
 fclose(fileID);
 
 %% Open Notepad to display the file
-java.lang.Thread.sleep(1000); % Give a second for Bonsai to save
 notes_filename = data_directory + 'notes.txt';
-system("start /b %windir%\system32\notepad.exe " + notes_filename);
+system("start %windir%\system32\notepad.exe " + notes_filename);
+
+%java.lang.Thread.sleep(1000); % Give a second for Bonsai to save
 
 %% Copy Newest Video and DAQ Files to session data directory
 
