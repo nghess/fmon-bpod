@@ -6,6 +6,9 @@ Written By: Nate Gonzales-Hess (nhess@uoregon.edu)
 Last Updated: 7/6/2023
 %}
 
+%% Give time for Bonsai to stop;
+java.lang.Thread.sleep(3000);
+
 %% Read in variables from base workspace
 BpodSystem = evalin('base', 'BpodSystem');
 experimenter = evalin('base', 'experimenter');
@@ -113,12 +116,11 @@ fprintf(fileID, '%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n\n%s\n%s\n%s\n%s\n\
 fclose(fileID);
 
 %% Open Notepad to display the file
-java.lang.Thread.sleep(1000); % Give a second for Bonsai to save
 notes_filename = data_directory + 'notes.txt';
-system("start /b %windir%\system32\notepad.exe " + notes_filename);
+system("start %windir%\system32\notepad.exe " + notes_filename);
 
 %% Copy Newest Video and DAQ Files to session data directory
-
+java.lang.Thread.sleep(5000); % Give time for Bonsai to save
 % Specify the directory
 folder = 'F:\rawvideos\';
 
@@ -138,11 +140,11 @@ poke_dat = "NiDAQ_poke.dat";
 
 % Check if DAQ files exist, move to data dir if so
 if isfile("D:/" + sniff_dat)
-    movefile("D:/" + sniff_dat, data_directory + sniff_dat);
+    copyfile("D:/" + sniff_dat, data_directory + sniff_dat);
 end
 
 if isfile("D:/" + poke_dat)
-    movefile("D:/" + poke_dat, data_directory + poke_dat);
+    copyfile("D:/" + poke_dat, data_directory + poke_dat);
 end
 
 % Copy video to data dir
