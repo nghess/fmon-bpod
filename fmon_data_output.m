@@ -54,7 +54,8 @@ mkdir(folderName, num2str(folderNum));
 data_directory = folderName + '/' + num2str(folderNum) + '/';
 
 %% Save BpodSystem Data
-save(data_directory + 'BpodSystem.mat', 'BpodSystem')
+session_data = BpodSystem.Data;
+save(data_directory + 'BpodSessionData.mat', 'session_data') % Maybe copy most recent file as with video?
 
 %% Build Trial Summarry
 if isfield(BpodSystem.Data, 'TrialTypes')
@@ -64,18 +65,19 @@ if isfield(BpodSystem.Data, 'TrialTypes')
     trialcount = (1:n)';
     start_time = zeros(1, n)';
     end_time = zeros(1, n)';
+    iti_time = zeros(1, n)';
 
     % Vectors for trial initiation and end timestamp
     for i = 1:length(trialtypes)
-        trial_start = BpodSystem.Data.RawEvents.Trial{1, i}.States.WaitForInitPoke(2);
-        trial_end = BpodSystem.Data.RawEvents.Trial{1, i}.States.ConfirmPortOut(2);
+        iti_time(i) = round(session_data.RawEvents.Trial{1, i}.States.ITI(2) - session_data.RawEvents.Trial{1, i}.States.ITI(1));
+        trial_start = session_data.TrialStartTimestamp(i); %BpodSystem.Data.RawEvents.Trial{1, i}.States.WaitForInitPoke(2);
+        trial_end = session_data.TrialEndTimestamp(i) - iti_time(i); %BpodSystem.Data.RawEvents.Trial{1, i}.States.ConfirmPortOut(2);
         start_time(i) = trial_start;
         end_time(i) = trial_end;
-
     end
 
     % Concatenate Vectors
-    summary_mat = horzcat(trialcount, trialtypes, start_time, end_time);
+    summary_mat = horzcat(trialcount, trialtypes, start_time, end_time, iti_time);
 
     % Save the matrix to a CSV file
     writematrix(summary_mat, data_directory + 'trialsummary.csv');
@@ -107,10 +109,36 @@ l_port = ['Left Port: ', num2str(LeftValveVolume*10)];
 r_port = ['Right Port: ', num2str(RightValveVolume*10)];
 i_port = ['Initiation Port: ', num2str(InitValveVolume*10)];
 
+% Get L/R Tallies
+left_correct = 0;
+left_total = 0;
+right_correct = 0;
+right_total = 0;
+
+% Loop through trials and count only if event was triggered (is numeric)
+for ii = 1:length(trialtypes)
+    if isnumeric(session_data.RawEvents.Trial{1, i}.States.GoLeft)
+        left_total = left_total + 1;
+        if isnumeric(session_data.RawEvents.Trial{1, i}.States.CorrectLeft)
+            left_correct = left_correct + 1;
+        end
+    end
+    if isnumeric(session_data.RawEvents.Trial{1, i}.States.GoRight)
+        right_total = right_total + 1;
+        if isnumeric(session_data.RawEvents.Trial{1, i}.States.CorrectRight)
+            right_correct = right_correct + 1;
+        end
+    end
+end
+
+left_ratio = ['L: ', num2str(left_correct), '/', num2str(left_total)];
+right_ratio = ['R: ', num2str(right_correct), '/', num2str(right_total)];
+        
 % Write the text to the file
-fprintf(fileID, '%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n\n%s\n%s\n%s\n%s\n\n%s\n',...
+fprintf(fileID, '%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n\n%s\n%s\n%s\n%s\n\n%s\n\n%s\n%s',...
     exp, trn, sex, date, mouse, weight, bias, session, odor, sniff, therm,...
-    h2o_calib, l_port, r_port, i_port, 'Experimenter Notes:');
+    h2o_calib, l_port, r_port, i_port, 'Experimenter Notes:',...
+    left_ratio, right_ratio);
 
 % Close the file
 fclose(fileID);
