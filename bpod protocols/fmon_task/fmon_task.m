@@ -164,7 +164,7 @@ for currentTrial = 1:MaxTrials
 
     sma = AddState(sma, 'Name', 'Omission', ...
         'Timer', 0,...
-        'StateChangeConditions', {'SoftCode1', 'CorrectLeft', 'SoftCode3', 'CorrectRight'},...  % Reward on either side
+        'StateChangeConditions', {'SoftCode1', 'NoReward', 'SoftCode3', 'NoReward'},...  % Reward on either side
         'OutputActions', {'ValveModule3', 1});  % Final valves open
 
     sma = AddState(sma, 'Name', 'CorrectLeft', ...
@@ -179,7 +179,7 @@ for currentTrial = 1:MaxTrials
 
     sma = AddState(sma, 'Name', 'NoReward', ... 
         'Timer', 0,...
-        'StateChangeConditions', {'Port1In', 'ITI', 'Port3In', 'ITI'},...
+        'StateChangeConditions', {'Port1In', 'ITI', 'Port2In', 'ITI', 'Port3In', 'ITI'},...
         'OutputActions', {'ValveModule1', 3, 'ValveModule2', 3, 'ValveModule3', 2}); % On decision, reset all valves
     
     sma = AddState(sma, 'Name', 'LeftReward', ...
@@ -193,13 +193,13 @@ for currentTrial = 1:MaxTrials
         'OutputActions', {'ValveState', 2,});  % On right poke give water
     
     sma = AddState(sma, 'Name', 'Drinking', ...
-        'Timer', 10,...
-        'StateChangeConditions', {'Tup', 'exit', 'Port1Out', 'ConfirmPortOut', 'Port2Out', 'ConfirmPortOut'},... 
+        'Timer', 5,...
+        'StateChangeConditions', {'Tup', 'ITI', 'Port1Out', 'ConfirmPortOut', 'Port2Out', 'ConfirmPortOut'},... 
         'OutputActions', {});
     
     sma = AddState(sma, 'Name', 'ConfirmPortOut', ...
         'Timer', PortOutDelay,...
-        'StateChangeConditions', {'Tup', 'exit', 'Port1In', 'Drinking', 'Port2In', 'Drinking'},...
+        'StateChangeConditions', {'Tup', 'ITI', 'Port1In', 'Drinking', 'Port2In', 'Drinking'},...
         'OutputActions', {});
     
     sma = AddState(sma, 'Name', 'ITI', ... 
@@ -240,10 +240,27 @@ function UpdateOutcomePlot(TrialTypes, Data)
 %% Execute when time is up:
 function timeUp(duration)
     disp(num2str(duration) + " minutes have elapsed! The session has ended.");  % Print to console, maybe make this an alert
-    RunProtocol('Stop');  % Stop the protocol   
+
     BpodSystem.BonsaiSocket = [];
+    RunProtocol('Stop');  % Stop the protocol   
     [~,~] = system('start C:\ProgramData\Anaconda3\python.exe D:\fmon-bpod\disconnect_gui.py'); % Stop Bonsai
+    %session_data = BpodSystem.Data;
     SaveBpodSessionData();  % Save Session Data to Bpod data folder
+    %deleteTimers();
     disp('running data output script');
     run('D:\fmon-bpod\fmon_data_output.m'); % Run data processing script
     
+function deleteTimers()
+    % Find all timers
+    allTimers = timerfindall;
+    % Loop through all timers
+    for i = 1:length(allTimers)
+        % Stop each timer
+        stop(allTimers(i));
+
+        % Reset each timer property as needed
+        allTimers(i).StartDelay = 0; % Reset start delay to 0
+        % Add code here to reset other timer properties as needed
+    end
+    % Kill them all
+    delete(allTimers);

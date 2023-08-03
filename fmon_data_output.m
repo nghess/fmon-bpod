@@ -134,10 +134,14 @@ if fmon_task == true
             end
         end
     end
-end
-    
+   
 left_ratio = ['L: ', num2str(left_correct), '/', num2str(left_total)];
 right_ratio = ['R: ', num2str(right_correct), '/', num2str(right_total)];
+
+else % Assign blank strings
+        left_ratio = '';
+        right_ratio = '';
+end
         
 % Write the text to the file
 fprintf(fileID, '%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n\n%s\n%s\n%s\n%s\n\n%s\n\n%s\n%s',...
