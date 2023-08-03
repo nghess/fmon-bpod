@@ -25,6 +25,9 @@ LeftValveVolume = evalin('base', 'LeftValveVolume');
 RightValveVolume = evalin('base', 'RightValveVolume');
 InitValveVolume = evalin('base', 'InitValveVolume');
 
+% Set fmon_task as false to ignore decision counts in notes.txt
+fmon_task = evalin('base', 'fmon_task_toggle');
+
 %% Create Mouse ID Folder
 folderName = 'D:/FMON_data/' + string(mouse_id);
 if ~exist(folderName, 'dir')
@@ -70,8 +73,8 @@ if isfield(BpodSystem.Data, 'TrialTypes')
     % Vectors for trial initiation and end timestamp
     for i = 1:length(trialtypes)
         iti_time(i) = round(session_data.RawEvents.Trial{1, i}.States.ITI(2) - session_data.RawEvents.Trial{1, i}.States.ITI(1));
-        trial_start = session_data.TrialStartTimestamp(i); %BpodSystem.Data.RawEvents.Trial{1, i}.States.WaitForInitPoke(2);
-        trial_end = session_data.TrialEndTimestamp(i) - iti_time(i); %BpodSystem.Data.RawEvents.Trial{1, i}.States.ConfirmPortOut(2);
+        trial_start = session_data.TrialStartTimestamp(i); 
+        trial_end = session_data.TrialEndTimestamp(i) - iti_time(i); 
         start_time(i) = trial_start;
         end_time(i) = trial_end;
     end
@@ -115,22 +118,24 @@ left_total = 0;
 right_correct = 0;
 right_total = 0;
 
-% Loop through trials and count only if event was triggered (is numeric)
-for ii = 1:length(trialtypes)
-    if isnumeric(session_data.RawEvents.Trial{1, i}.States.GoLeft)
-        left_total = left_total + 1;
-        if isnumeric(session_data.RawEvents.Trial{1, i}.States.CorrectLeft)
-            left_correct = left_correct + 1;
+% Loop through trials and count only if event was triggered (is not NaN)
+if fmon_task == true
+    for ii = 1:length(trialtypes)
+        if ~isnan(session_data.RawEvents.Trial{1, ii}.States.GoLeft)
+            left_total = left_total + 1;
+            if ~isnan(session_data.RawEvents.Trial{1, ii}.States.CorrectLeft)
+                left_correct = left_correct + 1;
+            end
         end
-    end
-    if isnumeric(session_data.RawEvents.Trial{1, i}.States.GoRight)
-        right_total = right_total + 1;
-        if isnumeric(session_data.RawEvents.Trial{1, i}.States.CorrectRight)
-            right_correct = right_correct + 1;
+        if ~isnan(session_data.RawEvents.Trial{1, ii}.States.GoRight)
+            right_total = right_total + 1;
+            if ~isnan(session_data.RawEvents.Trial{1, ii}.States.CorrectRight)
+                right_correct = right_correct + 1;
+            end
         end
     end
 end
-
+    
 left_ratio = ['L: ', num2str(left_correct), '/', num2str(left_total)];
 right_ratio = ['R: ', num2str(right_correct), '/', num2str(right_total)];
         

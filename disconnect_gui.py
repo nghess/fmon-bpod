@@ -10,7 +10,7 @@ bonsai = gw.getWindowsWithTitle('bpod-fmon')[0]
 bonsai.activate()
 
 # Wait for the window to be active
-time.sleep(1)
+time.sleep(.5)
 
 # Stop Bonsai
 pyautogui.hotkey('shift', 'f5')
