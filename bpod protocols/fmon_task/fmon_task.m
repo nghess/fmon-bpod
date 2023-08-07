@@ -106,8 +106,8 @@ TrialTypeOutcomePlot(BpodSystem.GUIHandles.OutcomePlot,'init',TrialTypes);
 for currentTrial = 1:MaxTrials
     
     % Valve Module serial messages, 1 = Odor, 2 = Omission, 3 = Reset
-    LoadSerialMessages('ValveModule1', {['B' 15], ['B' 51], ['B' 0]});  % Left valves
-    LoadSerialMessages('ValveModule2', {['B' 15], ['B' 51], ['B' 0]});  % Right valves
+    LoadSerialMessages('ValveModule1', {['B' 15], ['B' 195], ['B' 0]});  % Left valves
+    LoadSerialMessages('ValveModule2', {['B' 15], ['B' 195], ['B' 0]});  % Right valves
     LoadSerialMessages('ValveModule3', {['B' 3], ['B' 0]});  % Final Valves
     
     % Determine trial-specific state matrix fields
@@ -135,7 +135,7 @@ for currentTrial = 1:MaxTrials
     sma = AddState(sma, 'Name', 'OdorLeft', ...
         'Timer', 1,...
         'StateChangeConditions', {'Tup', 'WaitForInitPoke'},...
-        'OutputActions', {'ValveModule1', 1, 'ValveModule2', 2});  % Left odor, right omission
+        'OutputActions', {'ValveModule1', 1, 'ValveModule2', 2});  % Left odor, right omission --This is the problem one. flow is going to 0 on right omission.
 
     sma = AddState(sma, 'Name', 'OdorRight', ...
         'Timer', 1,...

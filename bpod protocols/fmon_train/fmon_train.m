@@ -59,7 +59,7 @@ end
 PortOutDelay = .5;
 
 %% Define trials
-n_HalfTrials = 50;
+n_HalfTrials = 100;
 TrialTypes = [1];  % First trial is left (1)
 % Build list, alternating between 2 and 1
 for i = 1:n_HalfTrials-1
@@ -193,8 +193,9 @@ function UpdateOutcomePlot(TrialTypes, Data)
 %% Time-Up Functions
 function timeUp(duration)
     disp(num2str(duration) + " minutes have elapsed! The session has ended.");  % Print to console, maybe make this an alert
-    RunProtocol('Stop');  % Stop the protocol   
     BpodSystem.BonsaiSocket = [];
+    RunProtocol('Stop');  % Stop the protocol   
+
     [~,~] = system('start C:\ProgramData\Anaconda3\python.exe D:\fmon-bpod\disconnect_gui.py'); % Stop Bonsai
     SaveBpodSessionData();  % Save Session Data to Bpod data folder
     disp('running data output script');
