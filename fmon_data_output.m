@@ -5,6 +5,8 @@ Creates directories and saves data once experiment ends
 Written By: Nate Gonzales-Hess (nhess@uoregon.edu)
 Last Updated: 7/6/2023
 %}
+%Clear Bpod TCP Socket
+BpodSystem.BonsaiSocket = [];
 
 %% Give time for Bonsai to stop;
 java.lang.Thread.sleep(3000);
@@ -155,6 +157,7 @@ fclose(fileID);
 %% Open Notepad to display the file
 notes_filename = data_directory + 'notes.txt';
 system("start %windir%\system32\notepad.exe " + notes_filename);
+%winopen(notes_filename);
 
 %% Copy Newest Video and DAQ Files to session data directory
 java.lang.Thread.sleep(5000); % Give time for Bonsai to save
@@ -171,9 +174,10 @@ files = files(~[files.isdir]);
 [~,index] = max([files.datenum]);
 video = files(index).name;
 
-% DAQ Files
+% DAQ and Timestamp files
 sniff_dat = "NiDAQ_sniff.dat";
 poke_dat = "NiDAQ_poke.dat";
+camera_timestamp = "rawvideo.txt";
 
 % Check if DAQ files exist, move to data dir if so
 if isfile("D:/" + sniff_dat)
@@ -184,8 +188,13 @@ if isfile("D:/" + poke_dat)
     copyfile("D:/" + poke_dat, data_directory + poke_dat);
 end
 
+% Check if camera timestamp files exists, move to data dir if so
+if isfile("D:/" + camera_timestamp)
+    copyfile("D:/" + camera_timestamp, data_directory + camera_timestamp);
+end
+
 % Copy video to data dir
 copyfile("F:/rawvideos/" + video, data_directory + video);
 
 %%
-
+disp('Data successfully saved.')

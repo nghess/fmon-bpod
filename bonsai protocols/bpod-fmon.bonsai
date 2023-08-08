@@ -478,9 +478,9 @@ def process(value):
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="io:TextWriter">
           <io:FileName>D:\rawvideo.txt</io:FileName>
-          <io:Suffix>Timestamp</io:Suffix>
+          <io:Suffix>None</io:Suffix>
           <io:Buffered>true</io:Buffered>
-          <io:Overwrite>false</io:Overwrite>
+          <io:Overwrite>true</io:Overwrite>
           <io:Append>true</io:Append>
         </Combinator>
       </Expression>

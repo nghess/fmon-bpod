@@ -31,7 +31,7 @@ end
 %Initialize session timer.
 t = timer;
 t.StartDelay = session_duration*60;  % time in seconds
-t.TimerFcn = @(~,~)timeUp(session_duration);  % timeUp is defined at end of this file
+t.TimerFcn = @(obj, event)timeUp(obj, event, session_duration);  % timeUp is defined at end of this file
 start(t);
 
 %% Set Reward amounts
@@ -238,29 +238,16 @@ function UpdateOutcomePlot(TrialTypes, Data)
     TrialTypeOutcomePlot(BpodSystem.GUIHandles.OutcomePlot,'update',Data.nTrials+1,TrialTypes,Outcomes);
 
 %% Execute when time is up:
-function timeUp(duration)
+function timeUp(obj, event, duration)
     disp(num2str(duration) + " minutes have elapsed! The session has ended.");  % Print to console, maybe make this an alert
-
-    BpodSystem.BonsaiSocket = [];
-    RunProtocol('Stop');  % Stop the protocol   
-    [~,~] = system('start C:\ProgramData\Anaconda3\python.exe D:\fmon-bpod\disconnect_gui.py'); % Stop Bonsai
-    %session_data = BpodSystem.Data;
     SaveBpodSessionData();  % Save Session Data to Bpod data folder
-    %deleteTimers();
-    disp('running data output script');
+    RunProtocol('Stop');  % Stop the protocol
+    BpodSystem.BonsaiSocket = [];  % Stop the connection to Bonsai.
+    stop(obj);  % Stop the timer
+    delete(obj);  % Delete the timer
+    java.lang.Thread.sleep(1000);
+    [~,~] = system('start C:\ProgramData\Anaconda3\python.exe D:\fmon-bpod\disconnect_gui.py'); % Stop Bonsai
+    disp('Running data output script...');
     run('D:\fmon-bpod\fmon_data_output.m'); % Run data processing script
     
-function deleteTimers()
-    % Find all timers
-    allTimers = timerfindall;
-    % Loop through all timers
-    for i = 1:length(allTimers)
-        % Stop each timer
-        stop(allTimers(i));
 
-        % Reset each timer property as needed
-        allTimers(i).StartDelay = 0; % Reset start delay to 0
-        % Add code here to reset other timer properties as needed
-    end
-    % Kill them all
-    delete(allTimers);
