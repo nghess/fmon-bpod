@@ -6,7 +6,7 @@ Written By: Nate Gonzales-Hess (nhess@uoregon.edu)
 Last Updated: 7/6/2023
 %}
 %Clear Bpod TCP Socket
-BpodSystem.BonsaiSocket = [];
+%BpodSystem.BonsaiSocket = [];
 
 %% Give time for Bonsai to stop;
 java.lang.Thread.sleep(3000);
@@ -71,18 +71,30 @@ if isfield(BpodSystem.Data, 'TrialTypes')
     start_time = zeros(1, n)';
     end_time = zeros(1, n)';
     iti_time = zeros(1, n)';
+    correct_trial = zeros(1, n)';
 
     % Vectors for trial initiation and end timestamp
     for i = 1:length(trialtypes)
         iti_time(i) = round(session_data.RawEvents.Trial{1, i}.States.ITI(2) - session_data.RawEvents.Trial{1, i}.States.ITI(1));
-        trial_start = session_data.TrialStartTimestamp(i); 
+        trial_start = session_data.TrialStartTimestamp(i) + session_data.RawEvents.Trial{1,i}.States.WaitForInitPoke(2); 
         trial_end = session_data.TrialEndTimestamp(i) - iti_time(i); 
         start_time(i) = trial_start;
         end_time(i) = trial_end;
     end
-
+    
+%     % Check if trial was correct
+%     for i = 1:length(trialtypes)
+%         if ~isnan(session_data.RawEvents.Trial{1, i}.States.CorrectLeft(1))
+%             correct_trial(i) = 1;
+%         elseif ~isnan(session_data.RawEvents.Trial{1, i}.States.CorrectRight(1))
+%             correct_trial(i) = 1;
+%         else
+%             correct_trial(i) = 0;
+%         end
+%     end
+%     
     % Concatenate Vectors
-    summary_mat = horzcat(trialcount, trialtypes, start_time, end_time, iti_time);
+    summary_mat = horzcat(trialcount, trialtypes, correct_trial, start_time, end_time, iti_time);
 
     % Save the matrix to a CSV file
     writematrix(summary_mat, data_directory + 'trialsummary.csv');
