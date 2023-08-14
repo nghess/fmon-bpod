@@ -21,14 +21,26 @@ BpodSystem.BonsaiSocket = [];
 % Connect to Bonsai
 BpodSystem.BonsaiSocket = TCPCom(11235);
 
-%% Set Timer
+%% Set Up Session Timer
 % Get duration from GUI, or use default of 40 minutes.
 if evalin('base', 'exist(''session_duration'', ''var'')')
     session_duration = evalin('base', 'session_duration');
 else
     session_duration = 40;
 end
-%Initialize session timer.
+
+persistent t  % Declaring t as global so it can be accessed outside function
+
+% If timer from cancelled session is running, stop and delete it.
+if exist('t', 'var') == 1 && isa(t, 'timer')
+    if strcmp(t.Running, 'on')
+        stop(t);
+        disp('Previously started timer stopped.')
+    end
+    delete(t);
+end
+
+% Initialize session timer.
 t = timer;
 t.StartDelay = session_duration*60;  % time in seconds
 t.TimerFcn = @(obj, event)timeUp(obj, event, session_duration);  % timeUp is defined at end of this file
@@ -52,10 +64,13 @@ end
 % Time to wait before lick port out is confirmed
 PortOutDelay = .5;
 
+% Time to wait for poke after decision. On timeout, ITI begins.
+PokeTimer = 5;
+
 %% Define trials
 nLeftTrials = 100;
 nRightTrials = 100;
-pctOmission = .1;
+pctOmission = evalin('base', 'pct_omission') / 100;
 nOmissionTrials = round((nLeftTrials + nRightTrials) * pctOmission);  % Some percentage of trials are omission trials.
 nOmissionDiff = round(0.5 * nOmissionTrials);  % Half of the omission trials, to substract from left and right trials.
 TrialTypes = [ones(1, nLeftTrials-nOmissionDiff) ones(1, nRightTrials-nOmissionDiff)*2 ones(1, nOmissionTrials)*3];  % 1 = Left, 2 = Right, 3 = Omission
@@ -168,29 +183,29 @@ for currentTrial = 1:MaxTrials
         'OutputActions', {'ValveModule3', 1});  % Final valves open
 
     sma = AddState(sma, 'Name', 'CorrectLeft', ...
-        'Timer', 0,...
-        'StateChangeConditions', {'Port1In', 'LeftReward', 'Port2In', 'NoReward'},...
-        'OutputActions', {'ValveModule1', 3, 'ValveModule2', 3, 'ValveModule3', 2});  % On decision, reset all valves
+        'Timer', PokeTimer,...
+        'StateChangeConditions', {'Tup', 'ITI', 'Port1In', 'LeftReward'},...
+        'OutputActions', {});  % On decision, reset all valves
 
     sma = AddState(sma, 'Name', 'CorrectRight', ...
-        'Timer', 0,...
-        'StateChangeConditions', {'Port1In', 'NoReward', 'Port2In', 'RightReward'},...
-        'OutputActions', {'ValveModule1', 3, 'ValveModule2', 3, 'ValveModule3', 2});  % On decision, reset all valves
+        'Timer', PokeTimer,...
+        'StateChangeConditions', {'Tup', 'ITI', 'Port2In', 'RightReward'},...
+        'OutputActions', {});  % On decision, reset all valves
 
     sma = AddState(sma, 'Name', 'NoReward', ... 
-        'Timer', 0,...
-        'StateChangeConditions', {'Port1In', 'ITI', 'Port2In', 'ITI', 'Port3In', 'ITI'},...
+        'Timer', PokeTimer,...
+        'StateChangeConditions', {'Tup', 'ITI', 'Port1In', 'ITI', 'Port2In', 'ITI', 'Port3In', 'ITI'},...
         'OutputActions', {'ValveModule1', 3, 'ValveModule2', 3, 'ValveModule3', 2}); % On decision, reset all valves
     
     sma = AddState(sma, 'Name', 'LeftReward', ...
         'Timer', LeftValveTime,...
         'StateChangeConditions', {'Tup', 'Drinking'},...
-        'OutputActions', {'ValveState', 1});  % On left poke give water
+        'OutputActions', {'ValveState', 1, 'ValveModule1', 3, 'ValveModule2', 3, 'ValveModule3', 2});  % On left poke give water & reset valves.
     
     sma = AddState(sma, 'Name', 'RightReward', ...
         'Timer', RightValveTime,...
         'StateChangeConditions', {'Tup', 'Drinking'},...
-        'OutputActions', {'ValveState', 2,});  % On right poke give water
+        'OutputActions', {'ValveState', 2, 'ValveModule1', 3, 'ValveModule2', 3, 'ValveModule3', 2});  % On right poke give water & reset valves.
     
     sma = AddState(sma, 'Name', 'Drinking', ...
         'Timer', 5,...
@@ -208,8 +223,6 @@ for currentTrial = 1:MaxTrials
         'OutputActions', {}); 
 
     T = BpodTrialManager;
-    %SendStateMachine(sma);
-    %RawEvents = RunStateMachine;
     T.startTrial(sma)
     RawEvents = T.getTrialData;
     if ~isempty(fieldnames(RawEvents)) % If trial data was returned
@@ -239,15 +252,15 @@ function UpdateOutcomePlot(TrialTypes, Data)
 
 %% Execute when time is up:
 function timeUp(obj, event, duration)
+    % Stop and delete the session timer
+    %stop(obj);
+    %delete(obj);
     disp(num2str(duration) + " minutes have elapsed! The session has ended.");  % Print to console, maybe make this an alert
     SaveBpodSessionData();  % Save Session Data to Bpod data folder
     RunProtocol('Stop');  % Stop the protocol
-    BpodSystem.BonsaiSocket = [];  % Stop the connection to Bonsai.
-    stop(obj);  % Stop the timer
-    delete(obj);  % Delete the timer
     java.lang.Thread.sleep(1000);
+    BpodSystem.BonsaiSocket = [];  % Stop the connection to Bonsai.
     [~,~] = system('start C:\ProgramData\Anaconda3\python.exe D:\fmon-bpod\disconnect_gui.py'); % Stop Bonsai
     disp('Running data output script...');
     run('D:\fmon-bpod\fmon_data_output.m'); % Run data processing script
-    
 
