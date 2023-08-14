@@ -252,14 +252,12 @@ function UpdateOutcomePlot(TrialTypes, Data)
 
 %% Execute when time is up:
 function timeUp(obj, event, duration)
-    % Stop and delete the session timer
-    %stop(obj);
-    %delete(obj);
     disp(num2str(duration) + " minutes have elapsed! The session has ended.");  % Print to console, maybe make this an alert
-    SaveBpodSessionData();  % Save Session Data to Bpod data folder
+    %SaveBpodSessionData();  % Save Session Data to Bpod data folder
+    BpodSystem.BonsaiSocket = [];  % Stop the connection to Bonsai.
     RunProtocol('Stop');  % Stop the protocol
     java.lang.Thread.sleep(1000);
-    BpodSystem.BonsaiSocket = [];  % Stop the connection to Bonsai.
+
     [~,~] = system('start C:\ProgramData\Anaconda3\python.exe D:\fmon-bpod\disconnect_gui.py'); % Stop Bonsai
     disp('Running data output script...');
     run('D:\fmon-bpod\fmon_data_output.m'); % Run data processing script
