@@ -73,7 +73,7 @@ nRightTrials = 100;
 pctOmission = evalin('base', 'pct_omission') / 100;
 nOmissionTrials = round((nLeftTrials + nRightTrials) * pctOmission);  % Some percentage of trials are omission trials.
 nOmissionDiff = round(0.5 * nOmissionTrials);  % Half of the omission trials, to substract from left and right trials.
-TrialTypes = [ones(1, nLeftTrials-nOmissionDiff) ones(1, nRightTrials-nOmissionDiff)*2 ones(1, nOmissionTrials)*3];  % 1 = Left, 2 = Right, 3 = Omission
+TrialTypes = [ones(1, nLeftTrials-nOmissionDiff) ones(1, nRightTrials-nOmissionDiff)*2 ones(1, round(nOmissionTrials/2))*3 ones(1, round(nOmissionTrials/2))*4];  % 1 = Left, 2 = Right, 3 = Omission Left, 4 = Omission Right
 
 % Ensure that trial type never repeats more than maxRepeats times
 maxRepeats = 3; % maximum repeat limit
@@ -121,8 +121,8 @@ TrialTypeOutcomePlot(BpodSystem.GUIHandles.OutcomePlot,'init',TrialTypes);
 for currentTrial = 1:MaxTrials
     
     % Valve Module serial messages, 1 = Odor, 2 = Omission, 3 = Reset
-    LoadSerialMessages('ValveModule1', {['B' 15], ['B' 195], ['B' 0]});  % Left valves
-    LoadSerialMessages('ValveModule2', {['B' 15], ['B' 195], ['B' 0]});  % Right valves
+    LoadSerialMessages('ValveModule1', {['B' 15], ['B' 195], ['B' 0]});  % Left valves: 15 = Odor, 195 = Omission, 0 = Reset
+    LoadSerialMessages('ValveModule2', {['B' 15], ['B' 195], ['B' 0]});  % Right valves: 15 = Odor, 195 = Omission, 0 = Reset
     LoadSerialMessages('ValveModule3', {['B' 3], ['B' 0]});  % Final Valves
     
     % Determine trial-specific state matrix fields
@@ -134,8 +134,11 @@ for currentTrial = 1:MaxTrials
             StateOnInitPoke = 'GoRight'; 
             OdorantState = 'OdorRight';
         case 3
-            StateOnInitPoke = 'Omission'; 
-            OdorantState = 'OdorOmit';
+            StateOnInitPoke = 'GoLeft'; 
+            OdorantState = 'OdorOmitLeft';
+        case 4
+            StateOnInitPoke = 'GoRight'; 
+            OdorantState = 'OdorOmitRight';
     end
 
     % Initialize new state machine description
@@ -150,17 +153,27 @@ for currentTrial = 1:MaxTrials
     sma = AddState(sma, 'Name', 'OdorLeft', ...
         'Timer', 1,...
         'StateChangeConditions', {'Tup', 'WaitForInitPoke'},...
-        'OutputActions', {'ValveModule1', 1, 'ValveModule2', 2});  % Left odor, right omission --This is the problem one. flow is going to 0 on right omission.
+        'OutputActions', {'ValveModule1', 1, 'ValveModule2', 2});  % Left odor, right omission
 
     sma = AddState(sma, 'Name', 'OdorRight', ...
         'Timer', 1,...
         'StateChangeConditions', {'Tup', 'WaitForInitPoke'},...
         'OutputActions', {'ValveModule1', 2, 'ValveModule2', 1});  % Left omission, right odor
-
-    sma = AddState(sma, 'Name', 'OdorOmit', ...
+    
+    sma = AddState(sma, 'Name', 'OdorOmitLeft', ...
         'Timer', 1,...
         'StateChangeConditions', {'Tup', 'WaitForInitPoke'},...
-        'OutputActions', {'ValveModule1', 2, 'ValveModule2', 2});  % Bilateral omission
+        'OutputActions', {'ValveModule1', 2, 'ValveModule2', 0});  % Left omission , Right reset (flow through dummy vial)
+    
+    sma = AddState(sma, 'Name', 'OdorOmitRight', ...
+        'Timer', 1,...
+        'StateChangeConditions', {'Tup', 'WaitForInitPoke'},...
+        'OutputActions', {'ValveModule1', 0, 'ValveModule2', 2});  % Left dummy , Right omission.
+
+%     sma = AddState(sma, 'Name', 'OdorOmit', ...
+%         'Timer', 1,...
+%         'StateChangeConditions', {'Tup', 'WaitForInitPoke'},...
+%         'OutputActions', {'ValveModule1', 2, 'ValveModule2', 2});  % Bilateral omission
 
     sma = AddState(sma, 'Name', 'WaitForInitPoke', ...
         'Timer', 0,...
