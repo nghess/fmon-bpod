@@ -26,6 +26,9 @@ side_bias = evalin('base', 'side_bias');
 LeftValveVolume = evalin('base', 'LeftValveVolume');
 RightValveVolume = evalin('base', 'RightValveVolume');
 InitValveVolume = evalin('base', 'InitValveVolume');
+drug_dose = evalin('base', 'drug_dose');
+drug_dose_total = evalin('base', 'drug_dose_total');
+
 
 % Set fmon_task as false to ignore decision counts in notes.txt
 fmon_task = evalin('base', 'fmon_task_toggle');
@@ -109,6 +112,9 @@ odor = 'Odorant: ' + string(odorant);
 sniff = 'Sniffing: ' + string(sniffing);
 therm = 'Thermistor Type: ' + string(thermistor_type); 
 session = ['Session: ', num2str(folderNum)];
+drug_dosage = 'Drug Dose: ' + string(drug_dose);
+drug_total = 'Total Injection: ' + string(drug_dose_total);
+
 h2o_calib = 'WATER CALIBRATION';
 l_port = ['Left Port: ', num2str(LeftValveVolume*10)];
 r_port = ['Right Port: ', num2str(RightValveVolume*10)];
@@ -146,8 +152,8 @@ else % Assign blank strings
 end
         
 % Write the text to the file
-fprintf(fileID, '%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n\n%s\n%s\n%s\n%s\n\n%s\n\n%s\n%s',...
-    exp, trn, sex, date, mouse, weight, bias, session, odor, sniff, therm,...
+fprintf(fileID, '%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n\n%s\n%s\n%s\n%s\n\n%s\n\n%s\n%s',...
+    exp, trn, sex, date, mouse, weight, bias, session, odor, sniff, therm, drug_dosage, drug_total,...
     h2o_calib, l_port, r_port, i_port, 'Experimenter Notes:',...
     left_ratio, right_ratio);
 
