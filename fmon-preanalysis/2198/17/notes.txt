@@ -1,0 +1,21 @@
+Experimenter: Amanda
+Trainer: None
+Mouse sex: Male
+Date: 13-Sep-2023 14:20:43
+Mouse ID: 2198
+Initial Weight: 20.5
+Side Bias: None
+Session: 17
+Odorant: 2-PE
+Sniffing: Yes
+Thermistor Type: Glass
+
+WATER CALIBRATION
+Left Port: 7.21
+Right Port: 7.25
+Initiation Port: 0
+
+Experimenter Notes:
+
+L: 31/40
+R: 37/38

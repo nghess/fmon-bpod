@@ -1,0 +1,23 @@
+Experimenter: Amanda
+Trainer: None
+Mouse sex: Male
+Date: 13-Sep-2023 11:43:02
+Mouse ID: 2195
+Initial Weight: 21.2 
+Side Bias: None
+Session: 17
+Odorant: None
+Sniffing: Yes
+Thermistor Type: Glass
+
+WATER CALIBRATION
+Left Port: 7.21
+Right Port: 7.25
+Initiation Port: 0
+
+Experimenter Notes: Had to plug mouse back in several times, likely inducing stress and decreasing trials. Sniff was intermittently cutting out and unreliable.
+3 mg/kg DOI mouse
+
+
+L: 14/18
+R: 21/24
