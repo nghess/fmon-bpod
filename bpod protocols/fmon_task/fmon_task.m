@@ -13,14 +13,10 @@ S = BpodSystem.ProtocolSettings; % Load settings chosen in launch manager into c
 
 %% Start Bonsai
 % Run Bonsai connect Python Script
-
 [~,~] = system('start C:\ProgramData\Anaconda3\python.exe D:\fmon-bpod\connect_gui.py');
+% Wait for Bonsai to start
 java.lang.Thread.sleep(1000);
 
-%Clear Bpod TCP Socket
-%BpodSystem.BonsaiSocket = [];
-% Connect to Bonsai
-% BpodSystem.BonsaiSocket = TCPCom(11235);
 
 %% Set Up Session Timer
 % Get duration from GUI, or use default of 40 minutes.
