@@ -15,7 +15,7 @@ time.sleep(.5)
 # Stop Bonsai
 pyautogui.hotkey('shift', 'f5')
 
-# Wait for the window to be active
+# Wait for the keystroke to be counted
 time.sleep(1)
 
 # Activate the window

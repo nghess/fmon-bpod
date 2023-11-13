@@ -3,7 +3,7 @@ FMON Task Module for Bpod
 Preferences (Set variables in Freely Moving Olfactory Navigation Task)
 
 Written By: Nate Gonzales-Hess (nhess@uoregon.edu)
-Last Updated: 7/7/2023
+Last Updated: 11/12/2023
 %}
 
 function fmon_task
@@ -12,14 +12,15 @@ global BpodSystem
 S = BpodSystem.ProtocolSettings; % Load settings chosen in launch manager into current workspace as a struct called S
 
 %% Start Bonsai
-%Clear Bpod TCP Socket
-BpodSystem.BonsaiSocket = [];
-
 % Run Bonsai connect Python Script
-[~,~] = system('start C:\ProgramData\Anaconda3\python.exe D:\fmon-bpod\connect_gui.py');
 
+[~,~] = system('start C:\ProgramData\Anaconda3\python.exe D:\fmon-bpod\connect_gui.py');
+java.lang.Thread.sleep(1000);
+
+%Clear Bpod TCP Socket
+%BpodSystem.BonsaiSocket = [];
 % Connect to Bonsai
-BpodSystem.BonsaiSocket = TCPCom(11235);
+% BpodSystem.BonsaiSocket = TCPCom(11235);
 
 %% Set Up Session Timer
 % Get duration from GUI, or use default of 40 minutes.
@@ -117,13 +118,20 @@ BpodSystem.GUIHandles.OutcomePlot = axes('Position', [.075 .3 .89 .6]);
 TrialTypeOutcomePlot(BpodSystem.GUIHandles.OutcomePlot,'init',TrialTypes);
 %BpodParameterGUI('init', S); % Initialize parameter GUI plugin
 
+%%
+disp("Starting 100-0 Bpod Protocol")
+
 %% Main trial loop
 for currentTrial = 1:MaxTrials
     
     % Valve Module serial messages, 1 = Odor, 2 = Omission, 3 = Reset
     LoadSerialMessages('ValveModule1', {['B' 15], ['B' 195], ['B' 0]});  % Left valves: 15 = Odor, 195 = Omission, 0 = Reset
     LoadSerialMessages('ValveModule2', {['B' 15], ['B' 195], ['B' 0]});  % Right valves: 15 = Odor, 195 = Omission, 0 = Reset
-    LoadSerialMessages('ValveModule3', {['B' 3], ['B' 0]});  % Final Valves
+    LoadSerialMessages('ValveModule3', {['B' 3], ['B' 0], ['B' 1], ['B' 2]});  % Final Valves: 3 = Both, 0 = Reset, 1 = Left, 2 = Right
+    
+    %I_sector = ['APP_SoftCode' num2str(2)];
+    L_sector = ['APP_SoftCode' num2str(1)];
+    R_sector = ['APP_SoftCode' num2str(3)];
     
     % Determine trial-specific state matrix fields
     switch TrialTypes(currentTrial)
@@ -134,11 +142,11 @@ for currentTrial = 1:MaxTrials
             StateOnInitPoke = 'GoRight'; 
             OdorantState = 'OdorRight';
         case 3
-            StateOnInitPoke = 'GoLeft'; 
-            OdorantState = 'OdorOmitLeft';
+            StateOnInitPoke = 'GoLeftOmit'; 
+            OdorantState = 'OdorOmit';
         case 4
-            StateOnInitPoke = 'GoRight'; 
-            OdorantState = 'OdorOmitRight';
+            StateOnInitPoke = 'GoRightOmit'; 
+            OdorantState = 'OdorOmit';
     end
 
     % Initialize new state machine description
@@ -160,20 +168,10 @@ for currentTrial = 1:MaxTrials
         'StateChangeConditions', {'Tup', 'WaitForInitPoke'},...
         'OutputActions', {'ValveModule1', 2, 'ValveModule2', 1});  % Left omission, right odor
     
-    sma = AddState(sma, 'Name', 'OdorOmitLeft', ...
+    sma = AddState(sma, 'Name', 'OdorOmit', ...
         'Timer', 1,...
         'StateChangeConditions', {'Tup', 'WaitForInitPoke'},...
-        'OutputActions', {'ValveModule1', 2, 'ValveModule2', 0});  % Left omission , Right reset (flow through dummy vial)
-    
-    sma = AddState(sma, 'Name', 'OdorOmitRight', ...
-        'Timer', 1,...
-        'StateChangeConditions', {'Tup', 'WaitForInitPoke'},...
-        'OutputActions', {'ValveModule1', 0, 'ValveModule2', 2});  % Left dummy , Right omission.
-
-%     sma = AddState(sma, 'Name', 'OdorOmit', ...
-%         'Timer', 1,...
-%         'StateChangeConditions', {'Tup', 'WaitForInitPoke'},...
-%         'OutputActions', {'ValveModule1', 2, 'ValveModule2', 2});  % Bilateral omission
+        'OutputActions', {'ValveModule1', 2, 'ValveModule2', 2});  % Both omission valves open to mask audio cue
 
     sma = AddState(sma, 'Name', 'WaitForInitPoke', ...
         'Timer', 0,...
@@ -181,19 +179,24 @@ for currentTrial = 1:MaxTrials
         'OutputActions', {});
 
     sma = AddState(sma, 'Name', 'GoLeft', ...
-        'Timer', 0,...
-        'StateChangeConditions', {'SoftCode1', 'CorrectLeft', 'SoftCode3', 'NoReward'},...
+        'Timer', .1,...
+        'StateChangeConditions', {L_sector, 'CorrectLeft', R_sector, 'NoReward'},...
         'OutputActions', {'ValveModule3', 1});  % Final valves open
     
     sma = AddState(sma, 'Name', 'GoRight', ...
-        'Timer', 0,...
-        'StateChangeConditions', {'SoftCode1', 'NoReward', 'SoftCode3', 'CorrectRight'},...
-        'OutputActions', {'ValveModule3', 1});  % Final valves open
-
-    sma = AddState(sma, 'Name', 'Omission', ...
-        'Timer', 0,...
-        'StateChangeConditions', {'SoftCode1', 'NoReward', 'SoftCode3', 'NoReward'},...  % Reward on either side
-        'OutputActions', {'ValveModule3', 1});  % Final valves open
+        'Timer', .1,...
+        'StateChangeConditions', {L_sector, 'NoReward', R_sector, 'CorrectRight'},...
+        'OutputActions', {'ValveModule3', 1});  % Both Final valves open
+    
+    sma = AddState(sma, 'Name', 'GoLeftOmit', ...
+        'Timer', .1,...
+        'StateChangeConditions', {L_sector, 'CorrectLeft', R_sector, 'NoReward'},...
+        'OutputActions', {'ValveModule3', 1});  % Left Final valve opens
+    
+    sma = AddState(sma, 'Name', 'GoRightOmit', ...
+        'Timer', .1,...
+        'StateChangeConditions', {L_sector, 'NoReward', R_sector, 'CorrectRight'},...
+        'OutputActions', {'ValveModule3', 1});  % Right Final valve opens
 
     sma = AddState(sma, 'Name', 'CorrectLeft', ...
         'Timer', PokeTimer,...
@@ -266,12 +269,9 @@ function UpdateOutcomePlot(TrialTypes, Data)
 %% Execute when time is up:
 function timeUp(obj, event, duration)
     disp(num2str(duration) + " minutes have elapsed! The session has ended.");  % Print to console, maybe make this an alert
-    %SaveBpodSessionData();  % Save Session Data to Bpod data folder
-    BpodSystem.BonsaiSocket = [];  % Stop the connection to Bonsai.
     RunProtocol('Stop');  % Stop the protocol
     java.lang.Thread.sleep(1000);
-
     [~,~] = system('start C:\ProgramData\Anaconda3\python.exe D:\fmon-bpod\disconnect_gui.py'); % Stop Bonsai
     disp('Running data output script...');
-    run('D:\fmon-bpod\fmon_data_output.m'); % Run data processing script
+    run('D:\fmon-bpod\fmon_data_output_aw.m'); % Run data processing script
 

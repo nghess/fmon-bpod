@@ -3,7 +3,7 @@ FMON Task Module for Bpod
 Preferences (Set variables in Freely Moving Olfactory Navigation Task)
 
 Written By: Nate Gonzales-Hess (nhess@uoregon.edu)
-Last Updated: 11/12/2023
+Last Updated: 7/7/2023
 %}
 
 function fmon_task
@@ -12,13 +12,14 @@ global BpodSystem
 S = BpodSystem.ProtocolSettings; % Load settings chosen in launch manager into current workspace as a struct called S
 
 %% Start Bonsai
+%Clear Bpod TCP Socket
+BpodSystem.BonsaiSocket = [];
+
 % Run Bonsai connect Python Script
 [~,~] = system('start C:\ProgramData\Anaconda3\python.exe D:\fmon-bpod\connect_gui.py');
 
-%Clear Bpod TCP Socket
-%BpodSystem.BonsaiSocket = [];
 % Connect to Bonsai
-% BpodSystem.BonsaiSocket = TCPCom(11235);
+BpodSystem.BonsaiSocket = TCPCom(11235);
 
 %% Set Up Session Timer
 % Get duration from GUI, or use default of 40 minutes.
@@ -124,10 +125,6 @@ for currentTrial = 1:MaxTrials
     LoadSerialMessages('ValveModule2', {['B' 15], ['B' 195], ['B' 0]});  % Right valves: 15 = Odor, 195 = Omission, 0 = Reset
     LoadSerialMessages('ValveModule3', {['B' 3], ['B' 0], ['B' 1], ['B' 2]});  % Final Valves: 3 = Both, 0 = Reset, 1 = Left, 2 = Right
     
-    %I_sector = ['APP_SoftCode' num2str(2)];
-    L_sector = ['APP_SoftCode' num2str(1)];
-    R_sector = ['APP_SoftCode' num2str(3)];
-    
     % Determine trial-specific state matrix fields
     switch TrialTypes(currentTrial)
         case 1
@@ -175,22 +172,22 @@ for currentTrial = 1:MaxTrials
 
     sma = AddState(sma, 'Name', 'GoLeft', ...
         'Timer', .1,...
-        'StateChangeConditions', {L_sector, 'CorrectLeft', R_sector, 'NoReward'},...
+        'StateChangeConditions', {'SoftCode1', 'CorrectLeft', 'SoftCode3', 'NoReward'},...
         'OutputActions', {'ValveModule3', 1});  % Final valves open
     
     sma = AddState(sma, 'Name', 'GoRight', ...
         'Timer', .1,...
-        'StateChangeConditions', {L_sector, 'NoReward', R_sector, 'CorrectRight'},...
+        'StateChangeConditions', {'SoftCode1', 'NoReward', 'SoftCode3', 'CorrectRight'},...
         'OutputActions', {'ValveModule3', 1});  % Both Final valves open
     
     sma = AddState(sma, 'Name', 'GoLeftOmit', ...
         'Timer', .1,...
-        'StateChangeConditions', {L_sector, 'CorrectLeft', R_sector, 'NoReward'},...
+        'StateChangeConditions', {'SoftCode1', 'CorrectLeft', 'SoftCode3', 'NoReward'},...
         'OutputActions', {'ValveModule3', 1});  % Left Final valve opens
     
     sma = AddState(sma, 'Name', 'GoRightOmit', ...
         'Timer', .1,...
-        'StateChangeConditions', {L_sector, 'NoReward', R_sector, 'CorrectRight'},...
+        'StateChangeConditions', {'SoftCode1', 'NoReward', 'SoftCode3', 'CorrectRight'},...
         'OutputActions', {'ValveModule3', 1});  % Right Final valve opens
 
     sma = AddState(sma, 'Name', 'CorrectLeft', ...
@@ -264,8 +261,11 @@ function UpdateOutcomePlot(TrialTypes, Data)
 %% Execute when time is up:
 function timeUp(obj, event, duration)
     disp(num2str(duration) + " minutes have elapsed! The session has ended.");  % Print to console, maybe make this an alert
+    %SaveBpodSessionData();  % Save Session Data to Bpod data folder
+    BpodSystem.BonsaiSocket = [];  % Stop the connection to Bonsai.
     RunProtocol('Stop');  % Stop the protocol
     java.lang.Thread.sleep(1000);
+
     [~,~] = system('start C:\ProgramData\Anaconda3\python.exe D:\fmon-bpod\disconnect_gui.py'); % Stop Bonsai
     disp('Running data output script...');
     run('D:\fmon-bpod\fmon_data_output_aw.m'); % Run data processing script
