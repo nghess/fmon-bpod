@@ -8,10 +8,9 @@ bpod = gw.getWindowsWithTitle('Bpod Console')[0]
 
 # Activate the window
 bonsai.activate()
-bonsai.maximize()
 
 # Wait for the window to be active
-time.sleep(2)
+time.sleep(1)
 
 # Start Bonsai
 pyautogui.press('f5')

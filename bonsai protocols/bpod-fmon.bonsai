@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<WorkflowBuilder Version="2.7.2"
+<WorkflowBuilder Version="2.8.1"
                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                  xmlns:osc="clr-namespace:Bonsai.Osc;assembly=Bonsai.Osc"
                  xmlns:p1="clr-namespace:Bonsai.PointGrey;assembly=Bonsai.PointGrey"
@@ -36,7 +36,7 @@
           <cv:Suffix>Timestamp</cv:Suffix>
           <cv:Buffered>true</cv:Buffered>
           <cv:Overwrite>false</cv:Overwrite>
-          <cv:FourCC>FMP4</cv:FourCC>
+          <cv:FourCC>DIVX</cv:FourCC>
           <cv:FrameRate>80</cv:FrameRate>
           <cv:FrameSize>
             <cv:Width>0</cv:Width>
@@ -154,49 +154,6 @@ def process(value):
       </Expression>
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="cv:LargestBinaryRegion" />
-      </Expression>
-      <Expression xsi:type="MemberSelector">
-        <Selector>Centroid.X</Selector>
-      </Expression>
-      <Expression xsi:type="ipy:PythonTransform">
-        <ipy:Script>globalx = 0
-import math
-
-@returns(int)
-def process(value):
-  global globalx
-  if math.isnan(value) == True:
-    x = globalx
-  if value == 0:
-    x = globalx
-  if math.isnan(value) == False:
-    if value != 0:
-      x = value
-      globalx = x
-  return x</ipy:Script>
-      </Expression>
-      <Expression xsi:type="MemberSelector">
-        <Selector>Centroid.Y</Selector>
-      </Expression>
-      <Expression xsi:type="ipy:PythonTransform">
-        <ipy:Script>globaly = 0
-import math
-
-@returns(int)
-def process(value):
-  global globaly
-  if math.isnan(value) == True:
-    y = globaly
-  if value == 0:
-    y = globaly
-  if math.isnan(value) == False:
-    if value != 0:
-      y = value
-      globaly = y
-  return y</ipy:Script>
-      </Expression>
-      <Expression xsi:type="Combinator">
-        <Combinator xsi:type="rx:Zip" />
       </Expression>
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="cv:BinaryRegionExtremes">
@@ -345,6 +302,49 @@ def process(value):
   else: nosepositiony = globaly
   globaly = nosepositiony
   return nosepositiony</ipy:Script>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="rx:Zip" />
+      </Expression>
+      <Expression xsi:type="MemberSelector">
+        <Selector>Centroid.X</Selector>
+      </Expression>
+      <Expression xsi:type="ipy:PythonTransform">
+        <ipy:Script>globalx = 0
+import math
+
+@returns(int)
+def process(value):
+  global globalx
+  if math.isnan(value) == True:
+    x = globalx
+  if value == 0:
+    x = globalx
+  if math.isnan(value) == False:
+    if value != 0:
+      x = value
+      globalx = x
+  return x</ipy:Script>
+      </Expression>
+      <Expression xsi:type="MemberSelector">
+        <Selector>Centroid.Y</Selector>
+      </Expression>
+      <Expression xsi:type="ipy:PythonTransform">
+        <ipy:Script>globaly = 0
+import math
+
+@returns(int)
+def process(value):
+  global globaly
+  if math.isnan(value) == True:
+    y = globaly
+  if value == 0:
+    y = globaly
+  if math.isnan(value) == False:
+    if value != 0:
+      y = value
+      globaly = y
+  return y</ipy:Script>
       </Expression>
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="rx:Zip" />
@@ -611,8 +611,8 @@ def process(value):
       <Edge From="1" To="2" Label="Source1" />
       <Edge From="2" To="3" Label="Source1" />
       <Edge From="2" To="14" Label="Source1" />
-      <Edge From="3" To="41" Label="Source1" />
       <Edge From="3" To="4" Label="Source1" />
+      <Edge From="3" To="41" Label="Source1" />
       <Edge From="4" To="5" Label="Source1" />
       <Edge From="5" To="6" Label="Source1" />
       <Edge From="6" To="7" Label="Source1" />
@@ -625,45 +625,45 @@ def process(value):
       <Edge From="11" To="12" Label="Source1" />
       <Edge From="12" To="13" Label="Source2" />
       <Edge From="12" To="46" Label="Source4" />
-      <Edge From="13" To="37" Label="Source1" />
+      <Edge From="13" To="32" Label="Source1" />
       <Edge From="13" To="41" Label="Source3" />
       <Edge From="14" To="15" Label="Source1" />
       <Edge From="15" To="16" Label="Source1" />
       <Edge From="16" To="17" Label="Source1" />
       <Edge From="17" To="18" Label="Source1" />
       <Edge From="18" To="19" Label="Source1" />
-      <Edge From="18" To="21" Label="Source1" />
-      <Edge From="18" To="24" Label="Source1" />
+      <Edge From="18" To="36" Label="Source1" />
+      <Edge From="18" To="38" Label="Source1" />
       <Edge From="19" To="20" Label="Source1" />
+      <Edge From="19" To="26" Label="Source1" />
+      <Edge From="20" To="21" Label="Source1" />
       <Edge From="20" To="23" Label="Source1" />
-      <Edge From="20" To="46" Label="Source5" />
       <Edge From="21" To="22" Label="Source1" />
-      <Edge From="22" To="23" Label="Source2" />
-      <Edge From="22" To="46" Label="Source6" />
-      <Edge From="23" To="41" Label="Source4" />
-      <Edge From="24" To="25" Label="Source1" />
-      <Edge From="24" To="31" Label="Source1" />
-      <Edge From="25" To="26" Label="Source1" />
-      <Edge From="25" To="28" Label="Source1" />
+      <Edge From="22" To="25" Label="Source1" />
+      <Edge From="23" To="24" Label="Source1" />
+      <Edge From="24" To="25" Label="Source2" />
+      <Edge From="25" To="32" Label="Source2" />
       <Edge From="26" To="27" Label="Source1" />
-      <Edge From="27" To="30" Label="Source1" />
-      <Edge From="28" To="29" Label="Source1" />
-      <Edge From="29" To="30" Label="Source2" />
-      <Edge From="30" To="37" Label="Source2" />
-      <Edge From="31" To="32" Label="Source1" />
-      <Edge From="31" To="34" Label="Source1" />
+      <Edge From="26" To="29" Label="Source1" />
+      <Edge From="27" To="28" Label="Source1" />
+      <Edge From="28" To="31" Label="Source1" />
+      <Edge From="29" To="30" Label="Source1" />
+      <Edge From="30" To="31" Label="Source2" />
+      <Edge From="31" To="32" Label="Source3" />
       <Edge From="32" To="33" Label="Source1" />
-      <Edge From="33" To="36" Label="Source1" />
-      <Edge From="34" To="35" Label="Source1" />
-      <Edge From="35" To="36" Label="Source2" />
-      <Edge From="36" To="37" Label="Source3" />
-      <Edge From="37" To="38" Label="Source1" />
-      <Edge From="37" To="39" Label="Source1" />
-      <Edge From="38" To="40" Label="Source1" />
-      <Edge From="38" To="46" Label="Source1" />
+      <Edge From="32" To="34" Label="Source1" />
+      <Edge From="33" To="35" Label="Source1" />
+      <Edge From="33" To="46" Label="Source1" />
+      <Edge From="34" To="35" Label="Source2" />
+      <Edge From="34" To="46" Label="Source2" />
+      <Edge From="35" To="41" Label="Source2" />
+      <Edge From="36" To="37" Label="Source1" />
+      <Edge From="37" To="40" Label="Source1" />
+      <Edge From="37" To="46" Label="Source5" />
+      <Edge From="38" To="39" Label="Source1" />
       <Edge From="39" To="40" Label="Source2" />
-      <Edge From="39" To="46" Label="Source2" />
-      <Edge From="40" To="41" Label="Source2" />
+      <Edge From="39" To="46" Label="Source6" />
+      <Edge From="40" To="41" Label="Source4" />
       <Edge From="41" To="42" Label="Source1" />
       <Edge From="41" To="43" Label="Source1" />
       <Edge From="43" To="44" Label="Source1" />
